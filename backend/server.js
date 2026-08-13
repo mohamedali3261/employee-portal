@@ -55,6 +55,11 @@ app.use((req, res, next) => {
 });
 
 // ── CORS: accept local & private network origins ──
+const extraOrigins = (process.env.CORS_ORIGINS || '')
+  .split(',')
+  .map((o) => o.trim())
+  .filter(Boolean);
+
 app.use(cors({
   origin: (origin, callback) => {
     if (!origin) return callback(null, true);
@@ -63,7 +68,10 @@ app.use(cors({
       const h = url.hostname;
       const isLocal = h === 'localhost' || h === '127.0.0.1' || h === '::1';
       const isPrivate = /^192\.168\./.test(h) || /^10\./.test(h) || /^172\.(1[6-9]|2\d|3[01])\./.test(h);
-      if (isLocal || isPrivate) {
+      const isVercel = h === 'vercel.app' || h.endsWith('.vercel.app');
+      const isTailnet = h.endsWith('.ts.net');
+      const isAllowed = extraOrigins.includes(origin) || isLocal || isPrivate || isVercel || isTailnet;
+      if (isAllowed) {
         callback(null, true);
       } else {
         callback(new Error('Not allowed by CORS'));

@@ -1,4 +1,4 @@
-const BASE_URL = import.meta.env.VITE_API_URL || '/api'
+const BASE_URL = import.meta.env.VITE_API_URL || (import.meta.env.PROD ? 'https://employee-portal.tail16a01e.ts.net/api' : '/api')
 
 function getAuthToken() {
   return localStorage.getItem('token')
