@@ -1,6 +1,8 @@
 const express = require('express');
 const router = express.Router();
 
+const { authenticateToken } = require('../middleware/auth');
+
 const authRouter = require('./admin/auth');
 const usersRouter = require('./admin/users');
 const employeesRouter = require('./admin/employees');
@@ -9,6 +11,7 @@ const customFieldsRouter = require('./admin/customfields');
 const profileSectionsRouter = require('./admin/profilesections');
 const sectionFieldsRouter = require('./admin/sectionfields');
 const dashboardRouter = require('./admin/dashboard');
+const { activityLogHandler } = require('./admin/dashboard');
 const backupRouter = require('./admin/backup');
 
 router.use('/', authRouter);
@@ -19,6 +22,7 @@ router.use('/custom-fields', customFieldsRouter);
 router.use('/profile-sections', profileSectionsRouter);
 router.use('/section-fields', sectionFieldsRouter);
 router.use('/dashboard', dashboardRouter);
+router.get('/activity-log', authenticateToken, activityLogHandler);
 router.use('/backup', backupRouter);
 
 module.exports = router;

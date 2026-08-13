@@ -7,7 +7,7 @@ const { paginate, validateEmployeeId } = require('../../utils/helpers');
 const { upload, logActivity } = require('./shared');
 
 // GET /api/admin/employees
-router.get('/', authenticateToken, (req, res) => {
+router.get('/', authenticateToken, async (req, res) => {
   try {
     const { page = 1, limit = 10, search, department, status } = req.query;
     const db = getDatabase();
@@ -42,13 +42,13 @@ router.get('/', authenticateToken, (req, res) => {
       countParams.push(status);
     }
 
-    const total = db.prepare(countQuery).get(...countParams).total;
+    const total = (await db.prepare(countQuery).get(...countParams)).total;
     const pagination = paginate(total, parseInt(page), parseInt(limit));
 
     query += ' ORDER BY created_at DESC LIMIT ? OFFSET ?';
     params.push(pagination.limit, pagination.offset);
 
-    const employees = db.prepare(query).all(...params);
+    const employees = await db.prepare(query).all(...params);
 
     res.json({
       success: true,
@@ -103,7 +103,7 @@ function parseCustomFields(raw, fallback) {
 }
 
 // POST /api/admin/employees
-router.post('/', authenticateToken, upload.any(), (req, res) => {
+router.post('/', authenticateToken, upload.any(), async (req, res) => {
   try {
     const {
       employee_id, name_ar, name_en, job_title, job_title_ar, job_title_en, department,
@@ -130,7 +130,7 @@ router.post('/', authenticateToken, upload.any(), (req, res) => {
 
     const db = getDatabase();
 
-    const existingEmployee = db.prepare('SELECT id FROM employees WHERE employee_id = ?').get(employee_id);
+    const existingEmployee = await db.prepare('SELECT id FROM employees WHERE employee_id = ?').get(employee_id);
     if (existingEmployee) {
       return res.status(400).json({
         success: false,
@@ -144,7 +144,7 @@ router.post('/', authenticateToken, upload.any(), (req, res) => {
     const customFieldsStr = parseCustomFields(custom_fields, '{}');
     const defaultPassword = bcrypt.hashSync('123456', 12);
 
-    const result = db.prepare(`
+    const result = await db.prepare(`
       INSERT INTO employees (employee_id, name_ar, name_en, job_title, job_title_ar, job_title_en, department, email, sector, hire_date, address, phone, status, notes, profile_image, insurance_number, bank, bank_account, attendance_base, route, education, graduation_year, employment_start, languages, documents, custom_fields, password, must_change_password, age)
       VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
     `).run(
@@ -176,7 +176,7 @@ router.post('/', authenticateToken, upload.any(), (req, res) => {
 });
 
 // PUT /api/admin/employees/:id
-router.put('/:id', authenticateToken, upload.any(), (req, res) => {
+router.put('/:id', authenticateToken, upload.any(), async (req, res) => {
   try {
     const { id } = req.params;
     const {
@@ -190,7 +190,7 @@ router.put('/:id', authenticateToken, upload.any(), (req, res) => {
 
     const db = getDatabase();
 
-    const existingEmployee = db.prepare('SELECT * FROM employees WHERE id = ?').get(id);
+    const existingEmployee = await db.prepare('SELECT * FROM employees WHERE id = ?').get(id);
     if (!existingEmployee) {
       return res.status(404).json({
         success: false,
@@ -206,7 +206,7 @@ router.put('/:id', authenticateToken, upload.any(), (req, res) => {
         });
       }
 
-      const duplicate = db.prepare('SELECT id FROM employees WHERE employee_id = ? AND id != ?').get(employee_id, id);
+      const duplicate = await db.prepare('SELECT id FROM employees WHERE employee_id = ? AND id != ?').get(employee_id, id);
       if (duplicate) {
         return res.status(400).json({
           success: false,
@@ -242,7 +242,7 @@ router.put('/:id', authenticateToken, upload.any(), (req, res) => {
 
     const customFieldsStr = parseCustomFields(custom_fields, existingEmployee.custom_fields || '{}');
 
-    db.prepare(`
+    await db.prepare(`
       UPDATE employees SET
         employee_id = ?, name_ar = ?, name_en = ?, job_title = ?, job_title_ar = ?, job_title_en = ?, department = ?,
         email = ?, sector = ?, hire_date = ?, address = ?,
@@ -300,12 +300,12 @@ router.put('/:id', authenticateToken, upload.any(), (req, res) => {
 });
 
 // DELETE /api/admin/employees/:id
-router.delete('/:id', authenticateToken, (req, res) => {
+router.delete('/:id', authenticateToken, async (req, res) => {
   try {
     const { id } = req.params;
     const db = getDatabase();
 
-    const employee = db.prepare('SELECT * FROM employees WHERE id = ?').get(id);
+    const employee = await db.prepare('SELECT * FROM employees WHERE id = ?').get(id);
     if (!employee) {
       return res.status(404).json({
         success: false,
@@ -313,7 +313,7 @@ router.delete('/:id', authenticateToken, (req, res) => {
       });
     }
 
-    db.prepare('DELETE FROM employees WHERE id = ?').run(id);
+    await db.prepare('DELETE FROM employees WHERE id = ?').run(id);
 
     logActivity('DELETE', 'employee', id, `Deleted employee ${employee.employee_id} - ${employee.name_en}`);
 
@@ -331,7 +331,7 @@ router.delete('/:id', authenticateToken, (req, res) => {
 });
 
 // POST /api/admin/import
-router.post('/import', authenticateToken, (req, res) => {
+router.post('/import', authenticateToken, async (req, res) => {
   try {
     const { employees } = req.body;
 
@@ -349,8 +349,6 @@ router.post('/import', authenticateToken, (req, res) => {
 
     const defaultImportHash = bcrypt.hashSync('123456', 12);
 
-    // Per-row try/catch cannot sit inside a SQLite transaction: a failed
-    // statement aborts the whole transaction and COMMIT/ROLLBACK then fail.
     for (const emp of employees) {
       try {
         if (!emp.employee_id || !emp.name_ar || !emp.name_en) {
@@ -365,9 +363,9 @@ router.post('/import', authenticateToken, (req, res) => {
           continue;
         }
 
-        const existing = db.prepare('SELECT id FROM employees WHERE employee_id = ?').get(emp.employee_id);
+        const existing = await db.prepare('SELECT id FROM employees WHERE employee_id = ?').get(emp.employee_id);
         if (existing) {
-          db.prepare(`UPDATE employees SET
+          await db.prepare(`UPDATE employees SET
             name_ar=?, name_en=?, job_title=?, department=?, email=?, sector=?, hire_date=?, address=?, phone=?,
             status=?, notes=?,
             insurance_number=?, bank=?, bank_account=?,
@@ -388,7 +386,7 @@ router.post('/import', authenticateToken, (req, res) => {
           );
           imported++;
         } else {
-          db.prepare(`INSERT INTO employees
+          await db.prepare(`INSERT INTO employees
             (employee_id, name_ar, name_en, job_title, department, email, sector, hire_date, address, phone,
             status, notes,
             insurance_number, bank, bank_account,

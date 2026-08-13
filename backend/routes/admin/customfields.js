@@ -14,11 +14,11 @@ function slugify(value) {
     .replace(/^_+|_+$/g, '') || 'field';
 }
 
-function generateUniqueKey(db, base) {
+async function generateUniqueKey(db, base) {
   let key = slugify(base);
   let candidate = key;
   let counter = 2;
-  while (db.prepare('SELECT id FROM custom_fields WHERE field_key = ?').get(candidate)) {
+  while (await db.prepare('SELECT id FROM custom_fields WHERE field_key = ?').get(candidate)) {
     candidate = `${key}_${counter}`;
     counter++;
   }
@@ -26,10 +26,10 @@ function generateUniqueKey(db, base) {
 }
 
 // GET /api/admin/custom-fields
-router.get('/', authenticateToken, (req, res) => {
+router.get('/', authenticateToken, async (req, res) => {
   try {
     const db = getDatabase();
-    const fields = db.prepare('SELECT * FROM custom_fields ORDER BY id ASC').all();
+    const fields = await db.prepare('SELECT * FROM custom_fields ORDER BY id ASC').all();
     res.json({ success: true, data: fields });
   } catch (error) {
     console.error('Get custom fields error:', error);
@@ -38,7 +38,7 @@ router.get('/', authenticateToken, (req, res) => {
 });
 
 // POST /api/admin/custom-fields
-router.post('/', authenticateToken, (req, res) => {
+router.post('/', authenticateToken, async (req, res) => {
   try {
     const { name_en, name_ar, type = 'text', options, section_id = null } = req.body;
 
@@ -55,10 +55,10 @@ router.post('/', authenticateToken, (req, res) => {
       : null;
 
     const db = getDatabase();
-    const field_key = generateUniqueKey(db, name_en);
+    const field_key = await generateUniqueKey(db, name_en);
     const finalSectionId = Number.isFinite(Number(section_id)) && Number(section_id) > 0 ? Number(section_id) : null;
 
-    const result = db.prepare(
+    const result = await db.prepare(
       'INSERT INTO custom_fields (name_en, name_ar, field_key, type, options, section_id) VALUES (?, ?, ?, ?, ?, ?)'
     ).run(name_en, name_ar, field_key, fieldType, optionsStr, finalSectionId);
 
@@ -84,13 +84,13 @@ router.post('/', authenticateToken, (req, res) => {
 });
 
 // PUT /api/admin/custom-fields/:id
-router.put('/:id', authenticateToken, (req, res) => {
+router.put('/:id', authenticateToken, async (req, res) => {
   try {
     const { id } = req.params;
     const { name_en, name_ar, type = 'text', options, section_id = null } = req.body;
 
     const db = getDatabase();
-    const field = db.prepare('SELECT * FROM custom_fields WHERE id = ?').get(id);
+    const field = await db.prepare('SELECT * FROM custom_fields WHERE id = ?').get(id);
     if (!field) {
       return res.status(404).json({ success: false, message: 'Custom field not found' });
     }
@@ -111,7 +111,7 @@ router.put('/:id', authenticateToken, (req, res) => {
     // field_key is immutable: renaming a field must not orphan saved employee values
     const field_key = field.field_key;
 
-    db.prepare('UPDATE custom_fields SET name_en = ?, name_ar = ?, field_key = ?, type = ?, options = ?, section_id = ? WHERE id = ?')
+    await db.prepare('UPDATE custom_fields SET name_en = ?, name_ar = ?, field_key = ?, type = ?, options = ?, section_id = ? WHERE id = ?')
       .run(name_en, name_ar, field_key, fieldType, optionsStr, finalSectionId, id);
 
     logActivity('UPDATE', 'custom_field', id, `Updated custom field ${name_en} - ${name_ar}`);
@@ -128,12 +128,12 @@ router.put('/:id', authenticateToken, (req, res) => {
 });
 
 // DELETE /api/admin/custom-fields/:id
-router.delete('/:id', authenticateToken, (req, res) => {
+router.delete('/:id', authenticateToken, async (req, res) => {
   try {
     const { id } = req.params;
     const db = getDatabase();
 
-    const field = db.prepare('SELECT * FROM custom_fields WHERE id = ?').get(id);
+    const field = await db.prepare('SELECT * FROM custom_fields WHERE id = ?').get(id);
     if (!field) {
       return res.status(404).json({
         success: false,
@@ -141,7 +141,7 @@ router.delete('/:id', authenticateToken, (req, res) => {
       });
     }
 
-    db.prepare('DELETE FROM custom_fields WHERE id = ?').run(id);
+    await db.prepare('DELETE FROM custom_fields WHERE id = ?').run(id);
 
     logActivity('DELETE', 'custom_field', id, `Deleted custom field ${field.name_en} - ${field.name_ar}`);
 

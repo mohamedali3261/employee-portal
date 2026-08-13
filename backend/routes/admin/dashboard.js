@@ -5,17 +5,17 @@ const { authenticateToken } = require('../../middleware/auth');
 const { paginate } = require('../../utils/helpers');
 
 // GET /api/admin/dashboard/statistics
-router.get('/statistics', authenticateToken, (req, res) => {
+router.get('/statistics', authenticateToken, async (req, res) => {
   try {
     const db = getDatabase();
 
-    const totalEmployees = db.prepare('SELECT COUNT(*) as count FROM employees').get().count;
-    const activeEmployees = db.prepare("SELECT COUNT(*) as count FROM employees WHERE status = 'active'").get().count;
-    const inactiveEmployees = db.prepare("SELECT COUNT(*) as count FROM employees WHERE status = 'inactive'").get().count;
+    const totalEmployees = (await db.prepare('SELECT COUNT(*) as count FROM employees').get()).count;
+    const activeEmployees = (await db.prepare("SELECT COUNT(*) as count FROM employees WHERE status = 'active'").get()).count;
+    const inactiveEmployees = (await db.prepare("SELECT COUNT(*) as count FROM employees WHERE status = 'inactive'").get()).count;
 
-    const departmentsCount = db.prepare('SELECT COUNT(*) as count FROM sections').get().count;
+    const departmentsCount = (await db.prepare('SELECT COUNT(*) as count FROM sections').get()).count;
 
-    const employeesByDepartment = db.prepare(`
+    const employeesByDepartment = await db.prepare(`
       SELECT department, COUNT(*) as count 
       FROM employees 
       WHERE department IS NOT NULL 
@@ -46,16 +46,16 @@ router.get('/statistics', authenticateToken, (req, res) => {
   }
 });
 
-// GET /api/admin/activity-log
-router.get('/activity-log', authenticateToken, (req, res) => {
+// GET /api/admin/dashboard/activity-log
+const activityLogHandler = async (req, res, next) => {
   try {
     const { page = 1, limit = 20 } = req.query;
     const db = getDatabase();
 
-    const total = db.prepare('SELECT COUNT(*) as count FROM activity_log').get().count;
+    const total = (await db.prepare('SELECT COUNT(*) as count FROM activity_log').get()).count;
     const pagination = paginate(total, parseInt(page), parseInt(limit));
 
-    const logs = db.prepare(`
+    const logs = await db.prepare(`
       SELECT * FROM activity_log 
       ORDER BY created_at DESC 
       LIMIT ? OFFSET ?
@@ -78,6 +78,8 @@ router.get('/activity-log', authenticateToken, (req, res) => {
       message: 'Internal server error'
     });
   }
-});
+};
+router.get('/activity-log', authenticateToken, activityLogHandler);
 
 module.exports = router;
+module.exports.activityLogHandler = activityLogHandler;

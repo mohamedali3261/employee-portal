@@ -7,7 +7,7 @@ const { authenticateToken } = require('../../middleware/auth');
 const { loginLimiter, settingsLimiter, logActivity } = require('./shared');
 
 // POST /api/admin/login
-router.post('/login', loginLimiter, (req, res) => {
+router.post('/login', loginLimiter, async (req, res) => {
   try {
     const { username, password, rememberMe } = req.body;
 
@@ -26,7 +26,7 @@ router.post('/login', loginLimiter, (req, res) => {
     }
 
     const db = getDatabase();
-    const admin = db.prepare('SELECT * FROM admin_users WHERE username = ?').get(username);
+    const admin = await db.prepare('SELECT * FROM admin_users WHERE username = ?').get(username);
 
     if (!admin) {
       console.warn(`⚠ Failed login attempt: user '${username}' from ${req.ip}`);
@@ -77,10 +77,10 @@ router.post('/login', loginLimiter, (req, res) => {
 });
 
 // GET /api/admin/profile
-router.get('/profile', authenticateToken, (req, res) => {
+router.get('/profile', authenticateToken, async (req, res) => {
   try {
     const db = getDatabase();
-    const admin = db.prepare('SELECT id, username, role, created_at FROM admin_users WHERE id = ?').get(req.user.id);
+    const admin = await db.prepare('SELECT id, username, role, created_at FROM admin_users WHERE id = ?').get(req.user.id);
     if (!admin) {
       return res.status(404).json({ success: false, message: 'Admin not found' });
     }
@@ -92,11 +92,11 @@ router.get('/profile', authenticateToken, (req, res) => {
 });
 
 // PUT /api/admin/settings/credentials
-router.put('/settings/credentials', authenticateToken, settingsLimiter, (req, res) => {
+router.put('/settings/credentials', authenticateToken, settingsLimiter, async (req, res) => {
   try {
     const { currentPassword, newUsername, newPassword } = req.body;
     const db = getDatabase();
-    const admin = db.prepare('SELECT * FROM admin_users WHERE id = ?').get(req.user.id);
+    const admin = await db.prepare('SELECT * FROM admin_users WHERE id = ?').get(req.user.id);
 
     if (!admin) {
       return res.status(404).json({ success: false, message: 'Admin not found' });
@@ -107,7 +107,7 @@ router.put('/settings/credentials', authenticateToken, settingsLimiter, (req, re
     }
 
     if (newUsername) {
-      const existing = db.prepare('SELECT id FROM admin_users WHERE username = ? AND id != ?').get(newUsername, req.user.id);
+      const existing = await db.prepare('SELECT id FROM admin_users WHERE username = ? AND id != ?').get(newUsername, req.user.id);
       if (existing) {
         return res.status(400).json({ success: false, message: 'Username already taken' });
       }
@@ -130,7 +130,7 @@ router.put('/settings/credentials', authenticateToken, settingsLimiter, (req, re
     }
 
     params.push(req.user.id);
-    db.prepare(`UPDATE admin_users SET ${updates.join(', ')} WHERE id = ?`).run(...params);
+    await db.prepare(`UPDATE admin_users SET ${updates.join(', ')} WHERE id = ?`).run(...params);
 
     const newToken = jwt.sign(
       { id: admin.id, username: newUsername || admin.username, role: admin.role },
@@ -159,7 +159,7 @@ router.put('/settings/credentials', authenticateToken, settingsLimiter, (req, re
 });
 
 // POST /api/admin/change-password (first login - forced password change)
-router.post('/change-password', authenticateToken, (req, res) => {
+router.post('/change-password', authenticateToken, async (req, res) => {
   try {
     const { newPassword, confirmPassword } = req.body;
     if (!newPassword || !confirmPassword) {
@@ -173,7 +173,7 @@ router.post('/change-password', authenticateToken, (req, res) => {
     }
 
     const db = getDatabase();
-    const admin = db.prepare('SELECT * FROM admin_users WHERE id = ?').get(req.user.id);
+    const admin = await db.prepare('SELECT * FROM admin_users WHERE id = ?').get(req.user.id);
     if (!admin) {
       return res.status(404).json({ success: false, message: 'Admin not found' });
     }
@@ -182,7 +182,7 @@ router.post('/change-password', authenticateToken, (req, res) => {
     }
 
     const hashedPassword = bcrypt.hashSync(newPassword, 12);
-    db.prepare('UPDATE admin_users SET password = ?, must_change_password = 0 WHERE id = ?').run(hashedPassword, req.user.id);
+    await db.prepare('UPDATE admin_users SET password = ?, must_change_password = 0 WHERE id = ?').run(hashedPassword, req.user.id);
 
     const newToken = jwt.sign(
       { id: admin.id, username: admin.username, role: admin.role, mustChangePassword: false },
@@ -206,7 +206,7 @@ router.post('/change-password', authenticateToken, (req, res) => {
 });
 
 // POST /api/admin/forgot-password - Reset password using security question
-router.post('/forgot-password', (req, res) => {
+router.post('/forgot-password', async (req, res) => {
   try {
     const { username, answer, newPassword } = req.body;
 
@@ -218,7 +218,7 @@ router.post('/forgot-password', (req, res) => {
     }
 
     const db = getDatabase();
-    const admin = db.prepare('SELECT * FROM admin_users WHERE username = ?').get(username);
+    const admin = await db.prepare('SELECT * FROM admin_users WHERE username = ?').get(username);
     if (!admin) {
       return res.status(404).json({ success: false, message: 'User not found' });
     }
@@ -233,7 +233,7 @@ router.post('/forgot-password', (req, res) => {
     }
 
     const hashedPassword = bcrypt.hashSync(newPassword, 12);
-    db.prepare('UPDATE admin_users SET password = ?, must_change_password = 0 WHERE id = ?').run(hashedPassword, admin.id);
+    await db.prepare('UPDATE admin_users SET password = ?, must_change_password = 0 WHERE id = ?').run(hashedPassword, admin.id);
 
     logActivity('update', 'admin', admin.id, `Password reset via security question for user '${username}'`);
 
@@ -245,14 +245,14 @@ router.post('/forgot-password', (req, res) => {
 });
 
 // GET /api/admin/security-question?username=xxx - Get security question for a user
-router.get('/security-question', (req, res) => {
+router.get('/security-question', async (req, res) => {
   try {
     const { username } = req.query;
     if (!username) {
       return res.status(400).json({ success: false, message: 'Username is required' });
     }
     const db = getDatabase();
-    const admin = db.prepare('SELECT security_question FROM admin_users WHERE username = ?').get(username);
+    const admin = await db.prepare('SELECT security_question FROM admin_users WHERE username = ?').get(username);
     if (!admin) {
       return res.status(404).json({ success: false, message: 'User not found' });
     }
@@ -267,7 +267,7 @@ router.get('/security-question', (req, res) => {
 });
 
 // POST /api/admin/security-question - Save security question and answer (requires auth)
-router.post('/security-question', authenticateToken, (req, res) => {
+router.post('/security-question', authenticateToken, async (req, res) => {
   try {
     const { question, answer } = req.body;
     if (!question || !answer) {
@@ -278,7 +278,7 @@ router.post('/security-question', authenticateToken, (req, res) => {
     }
 
     const db = getDatabase();
-    db.prepare('UPDATE admin_users SET security_question = ?, security_answer = ? WHERE id = ?')
+    await db.prepare('UPDATE admin_users SET security_question = ?, security_answer = ? WHERE id = ?')
       .run(question, answer.trim().toLowerCase(), req.user.id);
 
     logActivity('update', 'admin', req.user.id, `Security question updated`);
@@ -290,7 +290,7 @@ router.post('/security-question', authenticateToken, (req, res) => {
 });
 
 // POST /api/admin/change-password-with-security - Change password + save security question (first login)
-router.post('/change-password-with-security', authenticateToken, (req, res) => {
+router.post('/change-password-with-security', authenticateToken, async (req, res) => {
   try {
     const { newPassword, confirmPassword, question, answer } = req.body;
 
@@ -305,7 +305,7 @@ router.post('/change-password-with-security', authenticateToken, (req, res) => {
     }
 
     const db = getDatabase();
-    const admin = db.prepare('SELECT * FROM admin_users WHERE id = ?').get(req.user.id);
+    const admin = await db.prepare('SELECT * FROM admin_users WHERE id = ?').get(req.user.id);
     if (!admin) {
       return res.status(404).json({ success: false, message: 'Admin not found' });
     }
@@ -313,10 +313,10 @@ router.post('/change-password-with-security', authenticateToken, (req, res) => {
     const hashedPassword = bcrypt.hashSync(newPassword, 12);
 
     if (question && answer && answer.trim().length >= 2) {
-      db.prepare('UPDATE admin_users SET password = ?, must_change_password = 0, security_question = ?, security_answer = ? WHERE id = ?')
+      await db.prepare('UPDATE admin_users SET password = ?, must_change_password = 0, security_question = ?, security_answer = ? WHERE id = ?')
         .run(hashedPassword, question, answer.trim().toLowerCase(), req.user.id);
     } else {
-      db.prepare('UPDATE admin_users SET password = ?, must_change_password = 0 WHERE id = ?')
+      await db.prepare('UPDATE admin_users SET password = ?, must_change_password = 0 WHERE id = ?')
         .run(hashedPassword, req.user.id);
     }
 

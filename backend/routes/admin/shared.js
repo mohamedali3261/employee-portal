@@ -54,15 +54,17 @@ const fileStorage = multer.diskStorage({
 
 const upload = multer({ storage: fileStorage, limits: { fileSize: 10 * 1024 * 1024 } });
 
-// Log activity helper
+// Log activity helper (async, fire-and-forget)
 const logActivity = (action, entity, entityId, details) => {
-  try {
-    const db = getDatabase();
-    db.prepare('INSERT INTO activity_log (action, entity, entity_id, details) VALUES (?, ?, ?, ?)')
-      .run(action, entity, entityId, details);
-  } catch (error) {
-    console.error('Activity log error:', error);
-  }
+  (async () => {
+    try {
+      const db = getDatabase();
+      await db.prepare('INSERT INTO activity_log (action, entity, entity_id, details) VALUES (?, ?, ?, ?)')
+        .run(action, entity, entityId, details);
+    } catch (error) {
+      console.error('Activity log error:', error);
+    }
+  })();
 };
 
 module.exports = {

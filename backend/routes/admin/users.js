@@ -8,10 +8,10 @@ const { logActivity } = require('./shared');
 const DEFAULT_USER_PASSWORD = '123456';
 
 // GET /api/admin/users - Get list of admin users
-router.get('/', authenticateToken, (req, res) => {
+router.get('/', authenticateToken, async (req, res) => {
   try {
     const db = getDatabase();
-    const users = db.prepare(`
+    const users = await db.prepare(`
       SELECT id, username, role, must_change_password, created_at 
       FROM admin_users 
       ORDER BY created_at DESC
@@ -31,7 +31,7 @@ router.get('/', authenticateToken, (req, res) => {
 });
 
 // POST /api/admin/users - Create new admin user by username only (default password: 123456)
-router.post('/', authenticateToken, (req, res) => {
+router.post('/', authenticateToken, async (req, res) => {
   try {
     const { username, role } = req.body;
 
@@ -53,7 +53,7 @@ router.post('/', authenticateToken, (req, res) => {
 
     const db = getDatabase();
 
-    const existing = db.prepare('SELECT id FROM admin_users WHERE username = ?').get(cleanUsername);
+    const existing = await db.prepare('SELECT id FROM admin_users WHERE username = ?').get(cleanUsername);
     if (existing) {
       return res.status(400).json({
         success: false,
@@ -64,7 +64,7 @@ router.post('/', authenticateToken, (req, res) => {
     const hashedPassword = bcrypt.hashSync(DEFAULT_USER_PASSWORD, 12);
     const userRole = role || 'admin';
 
-    const result = db.prepare(`
+    const result = await db.prepare(`
       INSERT INTO admin_users (username, password, role, must_change_password)
       VALUES (?, ?, ?, 1)
     `).run(cleanUsername, hashedPassword, userRole);
@@ -91,7 +91,7 @@ router.post('/', authenticateToken, (req, res) => {
 });
 
 // PUT /api/admin/users/:id - Edit admin username
-router.put('/:id', authenticateToken, (req, res) => {
+router.put('/:id', authenticateToken, async (req, res) => {
   try {
     const { id } = req.params;
     const { username } = req.body;
@@ -114,7 +114,7 @@ router.put('/:id', authenticateToken, (req, res) => {
 
     const db = getDatabase();
 
-    const existingUser = db.prepare('SELECT * FROM admin_users WHERE id = ?').get(id);
+    const existingUser = await db.prepare('SELECT * FROM admin_users WHERE id = ?').get(id);
     if (!existingUser) {
       return res.status(404).json({
         success: false,
@@ -122,7 +122,7 @@ router.put('/:id', authenticateToken, (req, res) => {
       });
     }
 
-    const duplicate = db.prepare('SELECT id FROM admin_users WHERE username = ? AND id != ?').get(cleanUsername, id);
+    const duplicate = await db.prepare('SELECT id FROM admin_users WHERE username = ? AND id != ?').get(cleanUsername, id);
     if (duplicate) {
       return res.status(400).json({
         success: false,
@@ -130,7 +130,7 @@ router.put('/:id', authenticateToken, (req, res) => {
       });
     }
 
-    db.prepare('UPDATE admin_users SET username = ? WHERE id = ?').run(cleanUsername, id);
+    await db.prepare('UPDATE admin_users SET username = ? WHERE id = ?').run(cleanUsername, id);
 
     logActivity('UPDATE', 'user', id, `Updated username from '${existingUser.username}' to '${cleanUsername}'`);
 
@@ -152,12 +152,12 @@ router.put('/:id', authenticateToken, (req, res) => {
 });
 
 // POST /api/admin/users/:id/reset-password - Reset password to default (123456)
-router.post('/:id/reset-password', authenticateToken, (req, res) => {
+router.post('/:id/reset-password', authenticateToken, async (req, res) => {
   try {
     const { id } = req.params;
     const db = getDatabase();
 
-    const user = db.prepare('SELECT * FROM admin_users WHERE id = ?').get(id);
+    const user = await db.prepare('SELECT * FROM admin_users WHERE id = ?').get(id);
     if (!user) {
       return res.status(404).json({
         success: false,
@@ -166,7 +166,7 @@ router.post('/:id/reset-password', authenticateToken, (req, res) => {
     }
 
     const hashedPassword = bcrypt.hashSync(DEFAULT_USER_PASSWORD, 12);
-    db.prepare('UPDATE admin_users SET password = ?, must_change_password = 1 WHERE id = ?').run(hashedPassword, id);
+    await db.prepare('UPDATE admin_users SET password = ?, must_change_password = 1 WHERE id = ?').run(hashedPassword, id);
 
     logActivity('RESET_PASSWORD', 'user', id, `Reset password for user '${user.username}' to default 123456`);
 
@@ -184,7 +184,7 @@ router.post('/:id/reset-password', authenticateToken, (req, res) => {
 });
 
 // DELETE /api/admin/users/:id - Delete admin user
-router.delete('/:id', authenticateToken, (req, res) => {
+router.delete('/:id', authenticateToken, async (req, res) => {
   try {
     const { id } = req.params;
     const db = getDatabase();
@@ -196,7 +196,7 @@ router.delete('/:id', authenticateToken, (req, res) => {
       });
     }
 
-    const user = db.prepare('SELECT * FROM admin_users WHERE id = ?').get(id);
+    const user = await db.prepare('SELECT * FROM admin_users WHERE id = ?').get(id);
     if (!user) {
       return res.status(404).json({
         success: false,
@@ -204,7 +204,7 @@ router.delete('/:id', authenticateToken, (req, res) => {
       });
     }
 
-    db.prepare('DELETE FROM admin_users WHERE id = ?').run(id);
+    await db.prepare('DELETE FROM admin_users WHERE id = ?').run(id);
 
     logActivity('DELETE', 'user', id, `Deleted user '${user.username}'`);
 

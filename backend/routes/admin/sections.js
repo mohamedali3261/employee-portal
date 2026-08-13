@@ -5,10 +5,10 @@ const { authenticateToken } = require('../../middleware/auth');
 const { logActivity } = require('./shared');
 
 // GET /api/admin/sections
-router.get('/', authenticateToken, (req, res) => {
+router.get('/', authenticateToken, async (req, res) => {
   try {
     const db = getDatabase();
-    const sections = db.prepare('SELECT * FROM sections ORDER BY name_en ASC').all();
+    const sections = await db.prepare('SELECT * FROM sections ORDER BY name_en ASC').all();
 
     res.json({
       success: true,
@@ -24,7 +24,7 @@ router.get('/', authenticateToken, (req, res) => {
 });
 
 // POST /api/admin/sections
-router.post('/', authenticateToken, (req, res) => {
+router.post('/', authenticateToken, async (req, res) => {
   try {
     const { name_en, name_ar } = req.body;
 
@@ -37,7 +37,7 @@ router.post('/', authenticateToken, (req, res) => {
 
     const db = getDatabase();
 
-    const existing = db.prepare('SELECT id FROM sections WHERE name_en = ?').get(name_en);
+    const existing = await db.prepare('SELECT id FROM sections WHERE name_en = ?').get(name_en);
     if (existing) {
       return res.status(400).json({
         success: false,
@@ -45,7 +45,7 @@ router.post('/', authenticateToken, (req, res) => {
       });
     }
 
-    const result = db.prepare('INSERT INTO sections (name_en, name_ar) VALUES (?, ?)').run(name_en, name_ar);
+    const result = await db.prepare('INSERT INTO sections (name_en, name_ar) VALUES (?, ?)').run(name_en, name_ar);
 
     logActivity('CREATE', 'section', result.lastInsertRowid, `Created section ${name_en} - ${name_ar}`);
 
@@ -64,12 +64,12 @@ router.post('/', authenticateToken, (req, res) => {
 });
 
 // DELETE /api/admin/sections/:id
-router.delete('/:id', authenticateToken, (req, res) => {
+router.delete('/:id', authenticateToken, async (req, res) => {
   try {
     const { id } = req.params;
     const db = getDatabase();
 
-    const section = db.prepare('SELECT * FROM sections WHERE id = ?').get(id);
+    const section = await db.prepare('SELECT * FROM sections WHERE id = ?').get(id);
     if (!section) {
       return res.status(404).json({
         success: false,
@@ -77,7 +77,7 @@ router.delete('/:id', authenticateToken, (req, res) => {
       });
     }
 
-    const employeesUsing = db.prepare('SELECT COUNT(*) as count FROM employees WHERE department = ?').get(section.name_en);
+    const employeesUsing = await db.prepare('SELECT COUNT(*) as count FROM employees WHERE department = ?').get(section.name_en);
     if (employeesUsing.count > 0) {
       return res.status(400).json({
         success: false,
@@ -85,7 +85,7 @@ router.delete('/:id', authenticateToken, (req, res) => {
       });
     }
 
-    db.prepare('DELETE FROM sections WHERE id = ?').run(id);
+    await db.prepare('DELETE FROM sections WHERE id = ?').run(id);
 
     logActivity('DELETE', 'section', id, `Deleted section ${section.name_en} - ${section.name_ar}`);
 

@@ -35,10 +35,10 @@ const BUILTIN_FIELD_CATALOG = [
 ];
 
 // GET /api/admin/section-fields
-router.get('/', authenticateToken, (req, res) => {
+router.get('/', authenticateToken, async (req, res) => {
   try {
     const db = getDatabase();
-    const fields = db.prepare('SELECT * FROM section_fields ORDER BY section_id ASC, sort_order ASC, id ASC').all();
+    const fields = await db.prepare('SELECT * FROM section_fields ORDER BY section_id ASC, sort_order ASC, id ASC').all();
     res.json({ success: true, data: fields });
   } catch (error) {
     console.error('Get section fields error:', error);
@@ -47,10 +47,10 @@ router.get('/', authenticateToken, (req, res) => {
 });
 
 // GET /api/admin/section-fields/builtins
-router.get('/builtins', authenticateToken, (req, res) => {
+router.get('/builtins', authenticateToken, async (req, res) => {
   try {
     const db = getDatabase();
-    const existing = db.prepare('SELECT field_key FROM section_fields').all();
+    const existing = await db.prepare('SELECT field_key FROM section_fields').all();
     const usedKeys = new Set(existing.map((f) => f.field_key));
     const data = BUILTIN_FIELD_CATALOG.map((f) => ({ ...f, is_used: usedKeys.has(f.field_key) }));
     res.json({ success: true, data });
@@ -60,16 +60,16 @@ router.get('/builtins', authenticateToken, (req, res) => {
   }
 });
 
-function validateSectionId(db, sectionId) {
+async function validateSectionId(db, sectionId) {
   if (Number.isFinite(Number(sectionId)) && Number(sectionId) > 0) {
-    const section = db.prepare('SELECT id FROM profile_sections WHERE id = ?').get(Number(sectionId));
+    const section = await db.prepare('SELECT id FROM profile_sections WHERE id = ?').get(Number(sectionId));
     return section ? Number(sectionId) : null;
   }
   return null;
 }
 
 // POST /api/admin/section-fields  (add a ready built-in field to a section)
-router.post('/', authenticateToken, (req, res) => {
+router.post('/', authenticateToken, async (req, res) => {
   try {
     const { field_key, section_id, sort_order } = req.body;
 
@@ -83,20 +83,20 @@ router.post('/', authenticateToken, (req, res) => {
     }
 
     const db = getDatabase();
-    const existing = db.prepare('SELECT id FROM section_fields WHERE field_key = ?').get(field_key);
+    const existing = await db.prepare('SELECT id FROM section_fields WHERE field_key = ?').get(field_key);
     if (existing) {
       return res.status(400).json({ success: false, message: 'This field is already added' });
     }
 
-    const finalSectionId = validateSectionId(db, section_id);
+    const finalSectionId = await validateSectionId(db, section_id);
     if (!finalSectionId) {
       return res.status(400).json({ success: false, message: 'A valid section is required' });
     }
 
-    const maxOrder = db.prepare('SELECT MAX(sort_order) as max_order FROM section_fields WHERE section_id = ?').get(finalSectionId);
+    const maxOrder = await db.prepare('SELECT MAX(sort_order) as max_order FROM section_fields WHERE section_id = ?').get(finalSectionId);
     const finalOrder = Number.isFinite(Number(sort_order)) && Number(sort_order) > 0 ? Number(sort_order) : (maxOrder?.max_order || 0) + 10;
 
-    const result = db.prepare(
+    const result = await db.prepare(
       'INSERT INTO section_fields (field_key, name_en, name_ar, type, section_id, is_builtin, is_visible, required, sort_order) VALUES (?, ?, ?, ?, ?, 1, 1, 0, ?)'
     ).run(catalogItem.field_key, catalogItem.name_en, catalogItem.name_ar, catalogItem.type, finalSectionId, finalOrder);
 
@@ -114,13 +114,13 @@ router.post('/', authenticateToken, (req, res) => {
 });
 
 // PUT /api/admin/section-fields/:id
-router.put('/:id', authenticateToken, (req, res) => {
+router.put('/:id', authenticateToken, async (req, res) => {
   try {
     const { id } = req.params;
     const { name_en, name_ar, section_id, sort_order, is_visible, type, options } = req.body;
 
     const db = getDatabase();
-    const field = db.prepare('SELECT * FROM section_fields WHERE id = ?').get(id);
+    const field = await db.prepare('SELECT * FROM section_fields WHERE id = ?').get(id);
     if (!field) {
       return res.status(404).json({ success: false, message: 'Field not found' });
     }
@@ -129,13 +129,13 @@ router.put('/:id', authenticateToken, (req, res) => {
       return res.status(400).json({ success: false, message: 'English name and Arabic name are required' });
     }
 
-    const finalSectionId = validateSectionId(db, section_id);
+    const finalSectionId = await validateSectionId(db, section_id);
     const finalType = FIELD_TYPES.includes(type) ? type : field.type || 'text';
     const finalOrder = Number.isFinite(Number(sort_order)) && Number(sort_order) > 0 ? Number(sort_order) : field.sort_order;
     const finalVisible = is_visible === undefined ? field.is_visible : (is_visible ? 1 : 0);
     const optionsStr = finalType === 'dropdown' ? String(options || '').split(',').map(s => s.trim()).filter(Boolean).join(',') : null;
 
-    db.prepare('UPDATE section_fields SET name_en = ?, name_ar = ?, type = ?, options = ?, section_id = ?, sort_order = ?, is_visible = ? WHERE id = ?')
+    await db.prepare('UPDATE section_fields SET name_en = ?, name_ar = ?, type = ?, options = ?, section_id = ?, sort_order = ?, is_visible = ? WHERE id = ?')
       .run(name_en, name_ar, finalType, optionsStr, finalSectionId, finalOrder, finalVisible, id);
 
     logActivity('UPDATE', 'section_field', id, `Updated field ${name_en} - ${name_ar}`);
@@ -152,17 +152,17 @@ router.put('/:id', authenticateToken, (req, res) => {
 });
 
 // DELETE /api/admin/section-fields/:id
-router.delete('/:id', authenticateToken, (req, res) => {
+router.delete('/:id', authenticateToken, async (req, res) => {
   try {
     const { id } = req.params;
     const db = getDatabase();
 
-    const field = db.prepare('SELECT * FROM section_fields WHERE id = ?').get(id);
+    const field = await db.prepare('SELECT * FROM section_fields WHERE id = ?').get(id);
     if (!field) {
       return res.status(404).json({ success: false, message: 'Field not found' });
     }
 
-    db.prepare('DELETE FROM section_fields WHERE id = ?').run(id);
+    await db.prepare('DELETE FROM section_fields WHERE id = ?').run(id);
 
     logActivity('DELETE', 'section_field', id, `Deleted field ${field.name_en} - ${field.name_ar}`);
 

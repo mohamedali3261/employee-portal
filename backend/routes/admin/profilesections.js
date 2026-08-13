@@ -12,11 +12,11 @@ function slugify(value) {
     .replace(/^_+|_+$/g, '') || 'section';
 }
 
-function generateUniqueKey(db, base) {
+async function generateUniqueKey(db, base) {
   let key = slugify(base);
   let candidate = key;
   let counter = 2;
-  while (db.prepare('SELECT id FROM profile_sections WHERE section_key = ?').get(candidate)) {
+  while (await db.prepare('SELECT id FROM profile_sections WHERE section_key = ?').get(candidate)) {
     candidate = `${key}_${counter}`;
     counter++;
   }
@@ -24,10 +24,10 @@ function generateUniqueKey(db, base) {
 }
 
 // GET /api/admin/profile-sections
-router.get('/', authenticateToken, (req, res) => {
+router.get('/', authenticateToken, async (req, res) => {
   try {
     const db = getDatabase();
-    const sections = db.prepare('SELECT * FROM profile_sections ORDER BY sort_order ASC, id ASC').all();
+    const sections = await db.prepare('SELECT * FROM profile_sections ORDER BY sort_order ASC, id ASC').all();
     res.json({ success: true, data: sections });
   } catch (error) {
     console.error('Get profile sections error:', error);
@@ -36,7 +36,7 @@ router.get('/', authenticateToken, (req, res) => {
 });
 
 // POST /api/admin/profile-sections
-router.post('/', authenticateToken, (req, res) => {
+router.post('/', authenticateToken, async (req, res) => {
   try {
     const { name_en, name_ar, column_no = 2 } = req.body;
 
@@ -48,11 +48,11 @@ router.post('/', authenticateToken, (req, res) => {
     }
 
     const db = getDatabase();
-    const section_key = generateUniqueKey(db, name_en);
-    const maxOrder = db.prepare('SELECT MAX(sort_order) as max_order FROM profile_sections').get();
+    const section_key = await generateUniqueKey(db, name_en);
+    const maxOrder = await db.prepare('SELECT MAX(sort_order) as max_order FROM profile_sections').get();
     const sort_order = (maxOrder?.max_order || 0) + 10;
 
-    const result = db.prepare(
+    const result = await db.prepare(
       'INSERT INTO profile_sections (section_key, name_en, name_ar, sort_order, column_no, is_builtin) VALUES (?, ?, ?, ?, ?, 0)'
     ).run(section_key, name_en, name_ar, sort_order, column_no === 1 ? 1 : 2);
 
@@ -78,13 +78,13 @@ router.post('/', authenticateToken, (req, res) => {
 });
 
 // PUT /api/admin/profile-sections/:id
-router.put('/:id', authenticateToken, (req, res) => {
+router.put('/:id', authenticateToken, async (req, res) => {
   try {
     const { id } = req.params;
     const { name_en, name_ar, sort_order, column_no } = req.body;
 
     const db = getDatabase();
-    const section = db.prepare('SELECT * FROM profile_sections WHERE id = ?').get(id);
+    const section = await db.prepare('SELECT * FROM profile_sections WHERE id = ?').get(id);
     if (!section) {
       return res.status(404).json({ success: false, message: 'Profile section not found' });
     }
@@ -100,7 +100,7 @@ router.put('/:id', authenticateToken, (req, res) => {
     const finalOrder = Number.isFinite(nextOrder) && nextOrder > 0 ? nextOrder : section.sort_order;
     const finalColumn = column_no === 1 || column_no === 2 ? column_no : section.column_no;
 
-    db.prepare('UPDATE profile_sections SET name_en = ?, name_ar = ?, sort_order = ?, column_no = ? WHERE id = ?')
+    await db.prepare('UPDATE profile_sections SET name_en = ?, name_ar = ?, sort_order = ?, column_no = ? WHERE id = ?')
       .run(name_en, name_ar, finalOrder, finalColumn, id);
 
     logActivity('UPDATE', 'profile_section', id, `Updated profile section ${name_en} - ${name_ar}`);
@@ -117,12 +117,12 @@ router.put('/:id', authenticateToken, (req, res) => {
 });
 
 // DELETE /api/admin/profile-sections/:id
-router.delete('/:id', authenticateToken, (req, res) => {
+router.delete('/:id', authenticateToken, async (req, res) => {
   try {
     const { id } = req.params;
     const db = getDatabase();
 
-    const section = db.prepare('SELECT * FROM profile_sections WHERE id = ?').get(id);
+    const section = await db.prepare('SELECT * FROM profile_sections WHERE id = ?').get(id);
     if (!section) {
       return res.status(404).json({ success: false, message: 'Profile section not found' });
     }
@@ -132,8 +132,8 @@ router.delete('/:id', authenticateToken, (req, res) => {
     }
 
     // Reassign custom fields that belong to this section back to the default custom fields section
-    db.prepare('UPDATE custom_fields SET section_id = NULL WHERE section_id = ?').run(id);
-    db.prepare('DELETE FROM profile_sections WHERE id = ?').run(id);
+    await db.prepare('UPDATE custom_fields SET section_id = NULL WHERE section_id = ?').run(id);
+    await db.prepare('DELETE FROM profile_sections WHERE id = ?').run(id);
 
     logActivity('DELETE', 'profile_section', id, `Deleted profile section ${section.name_en} - ${section.name_ar}`);
 

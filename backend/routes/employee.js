@@ -1,13 +1,13 @@
 const express = require('express');
 const router = express.Router();
 const bcrypt = require('bcryptjs');
-const { getDatabase, saveDatabase } = require('../database/init');
+const { getDatabase } = require('../database/init');
 const { validateEmployeeId } = require('../utils/helpers');
 
 const DEFAULT_PASSWORD = '123456';
 
 // POST /api/employee/login
-router.post('/login', (req, res) => {
+router.post('/login', async (req, res) => {
   try {
     const { employee_id, password } = req.body;
 
@@ -33,7 +33,7 @@ router.post('/login', (req, res) => {
     }
 
     const db = getDatabase();
-    const employee = db.prepare('SELECT * FROM employees WHERE employee_id = ?').get(employee_id);
+    const employee = await db.prepare('SELECT * FROM employees WHERE employee_id = ?').get(employee_id);
 
     if (!employee) {
       return res.status(404).json({
@@ -77,7 +77,7 @@ router.post('/login', (req, res) => {
 });
 
 // POST /api/employee/change-password
-router.post('/change-password', (req, res) => {
+router.post('/change-password', async (req, res) => {
   try {
     const { employee_id, newPassword } = req.body;
 
@@ -96,7 +96,7 @@ router.post('/change-password', (req, res) => {
     }
 
     const db = getDatabase();
-    const employee = db.prepare('SELECT * FROM employees WHERE employee_id = ?').get(employee_id);
+    const employee = await db.prepare('SELECT * FROM employees WHERE employee_id = ?').get(employee_id);
 
     if (!employee) {
       return res.status(404).json({
@@ -106,8 +106,7 @@ router.post('/change-password', (req, res) => {
     }
 
     const hashedPassword = bcrypt.hashSync(newPassword, 12);
-    db.prepare('UPDATE employees SET password = ?, must_change_password = 0 WHERE employee_id = ?').run(hashedPassword, employee_id);
-    saveDatabase();
+    await db.prepare('UPDATE employees SET password = ?, must_change_password = 0 WHERE employee_id = ?').run(hashedPassword, employee_id);
 
     res.json({
       success: true,
@@ -123,7 +122,7 @@ router.post('/change-password', (req, res) => {
 });
 
 // GET /api/employee/search?q=query
-router.get('/search', (req, res) => {
+router.get('/search', async (req, res) => {
   try {
     const { q } = req.query;
     if (!q || !q.trim()) {
@@ -131,7 +130,7 @@ router.get('/search', (req, res) => {
     }
     const db = getDatabase();
     const searchTerm = `%${q.trim()}%`;
-    const employees = db.prepare(
+    const employees = await db.prepare(
       'SELECT * FROM employees WHERE employee_id LIKE ? OR name_ar LIKE ? OR name_en LIKE ? LIMIT 10'
     ).all(searchTerm, searchTerm, searchTerm);
 
@@ -146,10 +145,10 @@ router.get('/search', (req, res) => {
 });
 
 // GET /api/employee/custom-fields
-router.get('/custom-fields', (req, res) => {
+router.get('/custom-fields', async (req, res) => {
   try {
     const db = getDatabase();
-    const fields = db.prepare('SELECT * FROM custom_fields ORDER BY id ASC').all();
+    const fields = await db.prepare('SELECT * FROM custom_fields ORDER BY id ASC').all();
     res.json({ success: true, data: fields });
   } catch (error) {
     console.error('Get custom fields error:', error);
@@ -158,10 +157,10 @@ router.get('/custom-fields', (req, res) => {
 });
 
 // GET /api/employee/profile-sections
-router.get('/profile-sections', (req, res) => {
+router.get('/profile-sections', async (req, res) => {
   try {
     const db = getDatabase();
-    const sections = db.prepare('SELECT * FROM profile_sections ORDER BY sort_order ASC, id ASC').all();
+    const sections = await db.prepare('SELECT * FROM profile_sections ORDER BY sort_order ASC, id ASC').all();
     res.json({ success: true, data: sections });
   } catch (error) {
     console.error('Get profile sections error:', error);
@@ -170,10 +169,10 @@ router.get('/profile-sections', (req, res) => {
 });
 
 // GET /api/employee/section-fields
-router.get('/section-fields', (req, res) => {
+router.get('/section-fields', async (req, res) => {
   try {
     const db = getDatabase();
-    const fields = db.prepare('SELECT * FROM section_fields WHERE is_visible = 1 ORDER BY section_id ASC, sort_order ASC, id ASC').all();
+    const fields = await db.prepare('SELECT * FROM section_fields WHERE is_visible = 1 ORDER BY section_id ASC, sort_order ASC, id ASC').all();
     res.json({ success: true, data: fields });
   } catch (error) {
     console.error('Get section fields error:', error);
@@ -182,7 +181,7 @@ router.get('/section-fields', (req, res) => {
 });
 
 // GET /api/employee/:id
-router.get('/:id', (req, res) => {
+router.get('/:id', async (req, res) => {
   try {
     const { id } = req.params;
     const query = decodeURIComponent(id).trim();
@@ -196,11 +195,11 @@ router.get('/:id', (req, res) => {
 
     const db = getDatabase();
     // 1. Try exact employee_id match
-    let employee = db.prepare('SELECT * FROM employees WHERE employee_id = ?').get(query);
+    let employee = await db.prepare('SELECT * FROM employees WHERE employee_id = ?').get(query);
 
     // 2. If not found, try searching by name or partial employee_id
     if (!employee) {
-      employee = db.prepare(
+      employee = await db.prepare(
         'SELECT * FROM employees WHERE name_ar LIKE ? OR name_en LIKE ? OR employee_id LIKE ? LIMIT 1'
       ).get(`%${query}%`, `%${query}%`, `%${query}%`);
     }
