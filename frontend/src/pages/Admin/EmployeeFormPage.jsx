@@ -162,21 +162,23 @@ export default function EmployeeFormPage() {
                   />
                 </div>
 
-                <Documents
-                  form={form}
-                  handleAddDocument={handleAddDocument}
-                  handleRemoveDocument={handleRemoveDocument}
-                  handleDocumentChange={handleDocumentChange}
-                  handleDocumentFileChange={handleDocumentFileChange}
-                  t={t}
-                />
+                <div className="form-row-2col">
+                  <Documents
+                    form={form}
+                    handleAddDocument={handleAddDocument}
+                    handleRemoveDocument={handleRemoveDocument}
+                    handleDocumentChange={handleDocumentChange}
+                    handleDocumentFileChange={handleDocumentFileChange}
+                    t={t}
+                  />
 
-                <CustomFields
-                  form={form}
-                  customFieldDefs={customFieldDefs}
-                  profileSections={profileSections}
-                  handleCustomFieldChange={handleCustomFieldChange}
-                />
+                  <CustomFields
+                    form={form}
+                    customFieldDefs={customFieldDefs}
+                    profileSections={profileSections}
+                    handleCustomFieldChange={handleCustomFieldChange}
+                  />
+                </div>
               </div>
             </div>
 
