@@ -13,32 +13,25 @@ export default function ProfilePicture({ imagePreview, handleImageChange, handle
   };
 
   return (
-    <div className="form-card profile-sidebar-card">
+    <div className="form-card">
       <h3 className="form-card-title">
         <Camera size={18} />
         {t('profilePicture')}
       </h3>
-
-      <div className="profile-sidebar-content">
+      <div className="image-upload-section">
         {imagePreview ? (
-          <div className="profile-preview-circle">
-            <img src={imagePreview} alt="Preview" />
+          <div className="image-preview-wrapper">
+            <img src={imagePreview} alt="Preview" className="image-preview" />
             <button
               type="button"
-              className="profile-remove-btn"
+              className="image-remove-btn"
               onClick={() => { removeImage(); setUrlValue(''); }}
             >
-              <X size={14} />
+              <X size={16} />
             </button>
           </div>
-        ) : (
-          <div className="profile-placeholder">
-            <Camera size={40} />
-          </div>
-        )}
-
-        {urlMode ? (
-          <div className="profile-sidebar-actions">
+        ) : urlMode ? (
+          <div style={{ display: 'flex', flexDirection: 'column', gap: 8, width: '100%' }}>
             <input
               type="url"
               className="form-input"
@@ -47,20 +40,21 @@ export default function ProfilePicture({ imagePreview, handleImageChange, handle
               onChange={(e) => setUrlValue(e.target.value)}
               onKeyDown={(e) => e.key === 'Enter' && handleUrlSubmit()}
             />
-            <div style={{ display: 'flex', gap: 6 }}>
-              <button type="button" className="btn btn-primary btn-sm" onClick={handleUrlSubmit} style={{ flex: 1 }}>
+            <div style={{ display: 'flex', gap: 8 }}>
+              <button type="button" className="btn btn-primary" onClick={handleUrlSubmit} style={{ flex: 1 }}>
                 {t('save')}
               </button>
-              <button type="button" className="btn btn-outline btn-sm" onClick={() => setUrlMode(false)} style={{ flex: 1 }}>
+              <button type="button" className="btn btn-outline" onClick={() => setUrlMode(false)} style={{ flex: 1 }}>
                 {t('cancel')}
               </button>
             </div>
           </div>
         ) : (
-          <div className="profile-sidebar-actions">
-            <label className="profile-upload-btn">
-              <Upload size={16} />
-              <span>{t('upload')}</span>
+          <div style={{ display: 'flex', gap: 8, width: '100%' }}>
+            <label className="image-upload-area" style={{ flex: 1 }}>
+              <Upload size={32} className="upload-icon" />
+              <span className="upload-text">{t('upload')}</span>
+              <span className="upload-hint">PNG, JPG up to 5MB</span>
               <input
                 type="file"
                 accept="image/*"
@@ -70,11 +64,13 @@ export default function ProfilePicture({ imagePreview, handleImageChange, handle
             </label>
             <button
               type="button"
-              className="profile-url-btn"
+              className="image-upload-area"
+              style={{ flex: 1, cursor: 'pointer', display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center', gap: 4 }}
               onClick={() => setUrlMode(true)}
             >
-              <Link size={16} />
-              <span>{t('fromUrl') || 'From URL'}</span>
+              <Link size={32} className="upload-icon" />
+              <span className="upload-text">{t('fromUrl') || 'From URL'}</span>
+              <span className="upload-hint">https://...</span>
             </button>
           </div>
         )}
