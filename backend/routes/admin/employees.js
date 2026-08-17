@@ -4,7 +4,7 @@ const bcrypt = require('bcryptjs');
 const { getDatabase } = require('../../database/init');
 const { authenticateToken } = require('../../middleware/auth');
 const { paginate, validateEmployeeId } = require('../../utils/helpers');
-const { upload, logActivity } = require('./shared');
+const { upload, renameProfileImage, deleteProfileImage, logActivity } = require('./shared');
 
 // GET /api/admin/employees
 router.get('/', authenticateToken, async (req, res) => {
@@ -139,7 +139,9 @@ router.post('/', authenticateToken, upload.any(), async (req, res) => {
     }
 
     const profileFile = (req.files || []).find(f => f.fieldname === 'profile_image');
-    const profile_image = profileFile ? profileFile.filename : null;
+    const profile_image = profileFile
+      ? renameProfileImage(profileFile, employee_id)
+      : (req.body.profile_image_url || null);
     const processedDocs = processDocFiles(req.files, documents);
     const customFieldsStr = parseCustomFields(custom_fields, '{}');
     const defaultPassword = bcrypt.hashSync('123456', 12);
@@ -216,7 +218,13 @@ router.put('/:id', authenticateToken, upload.any(), async (req, res) => {
     }
 
     const profileFile = (req.files || []).find(f => f.fieldname === 'profile_image');
-    const profile_image = profileFile ? profileFile.filename : existingEmployee.profile_image;
+    let profile_image;
+    if (profileFile) {
+      deleteProfileImage(existingEmployee.profile_image);
+      profile_image = renameProfileImage(profileFile, employee_id || existingEmployee.employee_id);
+    } else {
+      profile_image = req.body.profile_image_url || existingEmployee.profile_image;
+    }
 
     // Merge document files into existing docs
     let existingDocs = [];
@@ -314,6 +322,7 @@ router.delete('/:id', authenticateToken, async (req, res) => {
       });
     }
 
+    deleteProfileImage(employee.profile_image);
     await db.prepare('DELETE FROM employees WHERE id = ?').run(id);
 
     logActivity('DELETE', 'employee', id, `Deleted employee ${employee.employee_id} - ${employee.name_en}`);

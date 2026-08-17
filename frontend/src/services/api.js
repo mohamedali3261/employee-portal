@@ -1,4 +1,5 @@
-const BASE_URL = import.meta.env.VITE_API_URL || (import.meta.env.PROD ? 'https://employee-portal.tail16a01e.ts.net/api' : '/api')
+const API_URL = import.meta.env.VITE_API_URL || (import.meta.env.PROD ? 'https://employee-portal.tail16a01e.ts.net/api' : '/api')
+const BACKEND_ORIGIN = API_URL.replace(/\/api\/?$/, '')
 
 function getAuthToken() {
   return localStorage.getItem('token')
@@ -55,7 +56,7 @@ async function request(url, options = {}) {
   const timeout = setTimeout(() => controller.abort(), 30000)
 
   try {
-    const response = await fetch(`${BASE_URL}${url}`, {
+    const response = await fetch(`${API_URL}${url}`, {
       ...fetchOptions,
       headers,
       signal: controller.signal,
@@ -136,7 +137,7 @@ function mapEmployeeFromBackend(emp) {
     phone2: emp.phone2 || '',
     status: emp.status,
     notes: emp.notes,
-    profileImage: emp.profile_image ? `/uploads/employees/${emp.profile_image}` : null,
+    profileImage: emp.profile_image ? (emp.profile_image.startsWith('http') ? emp.profile_image : `${BACKEND_ORIGIN}/uploads/employees/${emp.profile_image}`) : null,
     insuranceNumber: emp.insurance_number,
     bank: emp.bank,
     bankAccount: emp.bank_account,
@@ -147,7 +148,10 @@ function mapEmployeeFromBackend(emp) {
     employmentStart: emp.employment_start || '',
     birthdate: emp.birthdate || '',
     languages,
-    documents,
+    documents: documents.map(d => {
+      if (d.fileUrl && !d.fileUrl.startsWith('http')) d.fileUrl = `${BACKEND_ORIGIN}${d.fileUrl}`
+      return d
+    }),
     customFields,
     createdAt: emp.created_at,
     updatedAt: emp.updated_at,
@@ -282,6 +286,9 @@ export async function createEmployee(formData) {
     if (formData.profileImage instanceof File) {
       fd.append('profile_image', formData.profileImage)
     }
+    if (formData.profileImageUrl) {
+      fd.append('profile_image_url', formData.profileImageUrl)
+    }
     body = fd
   }
 
@@ -315,6 +322,9 @@ export async function updateEmployee(id, formData) {
     })
     if (formData.profileImage instanceof File) {
       fd.append('profile_image', formData.profileImage)
+    }
+    if (formData.profileImageUrl) {
+      fd.append('profile_image_url', formData.profileImageUrl)
     }
     body = fd
   }

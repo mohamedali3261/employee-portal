@@ -41,10 +41,8 @@ const fileStorage = multer.diskStorage({
   },
   filename: (req, file, cb) => {
     if (file.fieldname === 'profile_image') {
-      // Use timestamp-based filename to ensure uniqueness, will be renamed later if needed
-      const timestamp = Date.now() + '-' + Math.round(Math.random() * 1E9);
       const ext = path.extname(file.originalname).toLowerCase();
-      cb(null, timestamp + ext);
+      cb(null, 'temp-' + Date.now() + ext);
     } else {
       const unique = Date.now() + '-' + Math.round(Math.random() * 1E9);
       const ext = path.extname(file.originalname).toLowerCase();
@@ -52,6 +50,26 @@ const fileStorage = multer.diskStorage({
     }
   }
 });
+
+function renameProfileImage(file, employeeId) {
+  if (!file) return null;
+  const ext = path.extname(file.originalname).toLowerCase();
+  const newName = employeeId + ext;
+  const newPath = path.join(uploadsDir, 'employees', newName);
+  const oldPath = file.path;
+  if (oldPath !== newPath && fs.existsSync(oldPath)) {
+    fs.renameSync(oldPath, newPath);
+  }
+  return newName;
+}
+
+function deleteProfileImage(filename) {
+  if (!filename) return;
+  const filePath = path.join(uploadsDir, 'employees', filename);
+  if (fs.existsSync(filePath)) {
+    fs.unlinkSync(filePath);
+  }
+}
 
 const upload = multer({ storage: fileStorage, limits: { fileSize: 10 * 1024 * 1024 } });
 
@@ -72,5 +90,7 @@ module.exports = {
   loginLimiter,
   settingsLimiter,
   upload,
+  renameProfileImage,
+  deleteProfileImage,
   logActivity
 };

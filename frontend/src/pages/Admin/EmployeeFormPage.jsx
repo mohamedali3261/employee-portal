@@ -29,6 +29,7 @@ export default function EmployeeFormPage() {
     handleChange,
     handleCustomFieldChange,
     handleImageChange,
+    handleImageUrl,
     removeImage,
     handleAddLanguage,
     handleRemoveLanguage,
@@ -170,6 +171,7 @@ export default function EmployeeFormPage() {
             <ProfilePicture
               imagePreview={imagePreview}
               handleImageChange={handleImageChange}
+              handleImageUrl={handleImageUrl}
               removeImage={removeImage}
               t={t}
             />

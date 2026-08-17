@@ -140,8 +140,13 @@ export function useEmployeeForm() {
   };
 
   const removeImage = () => {
-    setForm((prev) => ({ ...prev, profileImage: null }));
+    setForm((prev) => ({ ...prev, profileImage: null, profileImageUrl: null }));
     setImagePreview(null);
+  };
+
+  const handleImageUrl = (url) => {
+    setForm((prev) => ({ ...prev, profileImage: null, profileImageUrl: url }));
+    setImagePreview(url);
   };
 
   const handleAddLanguage = () => {
@@ -266,6 +271,9 @@ export function useEmployeeForm() {
       if (form.profileImage) {
         employeeData.profileImage = form.profileImage;
       }
+      if (form.profileImageUrl) {
+        employeeData.profileImageUrl = form.profileImageUrl;
+      }
 
       if (isEdit) {
         await updateEmployee(id, employeeData);
@@ -296,6 +304,7 @@ export function useEmployeeForm() {
     handleChange,
     handleCustomFieldChange,
     handleImageChange,
+    handleImageUrl,
     removeImage,
     handleAddLanguage,
     handleRemoveLanguage,
