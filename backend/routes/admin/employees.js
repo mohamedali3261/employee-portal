@@ -108,10 +108,10 @@ router.post('/', authenticateToken, upload.any(), async (req, res) => {
     const {
       employee_id, name_ar, name_en, job_title, job_title_ar, job_title_en, department,
       email, sector, hire_date, address,
-      phone, status, notes,
+      phone, phone2, status, notes,
       insurance_number, bank, bank_account, attendance_base, route, education, graduation_year,
       employment_start, languages, documents,
-      custom_fields, age
+      custom_fields, birthdate
     } = req.body;
 
     if (!employee_id || !name_ar || !name_en) {
@@ -145,18 +145,18 @@ router.post('/', authenticateToken, upload.any(), async (req, res) => {
     const defaultPassword = bcrypt.hashSync('123456', 12);
 
     const result = await db.prepare(`
-      INSERT INTO employees (employee_id, name_ar, name_en, job_title, job_title_ar, job_title_en, department, email, sector, hire_date, address, phone, status, notes, profile_image, insurance_number, bank, bank_account, attendance_base, route, education, graduation_year, employment_start, languages, documents, custom_fields, password, must_change_password, age)
-      VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
+      INSERT INTO employees (employee_id, name_ar, name_en, job_title, job_title_ar, job_title_en, department, email, sector, hire_date, address, phone, phone2, status, notes, profile_image, insurance_number, bank, bank_account, attendance_base, route, education, graduation_year, employment_start, languages, documents, custom_fields, password, must_change_password, birthdate)
+      VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
     `).run(
       employee_id, name_ar, name_en,
       job_title || '', job_title_ar || '', job_title_en || '',
       department || '',
       email || '', sector || '', hire_date || '', address || '',
-      phone || '', status || 'active', notes || '', profile_image,
+      phone || '', phone2 || '', status || 'active', notes || '', profile_image,
       insurance_number || '', bank || '', bank_account || '',
       attendance_base || '', route || '', education || '', graduation_year || '',
       employment_start || '', languages || '[]', processedDocs, customFieldsStr, defaultPassword, 1,
-      age || null
+      birthdate || null
     );
 
     logActivity('CREATE', 'employee', result.lastInsertRowid, `Created employee ${employee_id} - ${name_en}`);
@@ -182,10 +182,10 @@ router.put('/:id', authenticateToken, upload.any(), async (req, res) => {
     const {
       employee_id, name_ar, name_en, job_title, job_title_ar, job_title_en, department,
       email, sector, hire_date, address,
-      phone, status, notes,
+      phone, phone2, status, notes,
       insurance_number, bank, bank_account, attendance_base, route, education, graduation_year,
       employment_start, languages, documents,
-      custom_fields, age
+      custom_fields, birthdate
     } = req.body;
 
     const db = getDatabase();
@@ -246,12 +246,12 @@ router.put('/:id', authenticateToken, upload.any(), async (req, res) => {
       UPDATE employees SET
         employee_id = ?, name_ar = ?, name_en = ?, job_title = ?, job_title_ar = ?, job_title_en = ?, department = ?,
         email = ?, sector = ?, hire_date = ?, address = ?,
-        phone = ?,
+        phone = ?, phone2 = ?,
         status = ?, notes = ?, profile_image = ?,
         insurance_number = ?, bank = ?, bank_account = ?,
         attendance_base = ?, route = ?, education = ?, graduation_year = ?,
         employment_start = ?, languages = ?, documents = ?, custom_fields = ?,
-        updated_at = CURRENT_TIMESTAMP, age = ?
+        updated_at = CURRENT_TIMESTAMP, birthdate = ?
       WHERE id = ?
     `).run(
       employee_id || existingEmployee.employee_id,
@@ -266,6 +266,7 @@ router.put('/:id', authenticateToken, upload.any(), async (req, res) => {
       hire_date || existingEmployee.hire_date || '',
       address || existingEmployee.address || '',
       phone || existingEmployee.phone,
+      phone2 || existingEmployee.phone2 || '',
       status || existingEmployee.status,
       notes || existingEmployee.notes,
       profile_image,
@@ -280,7 +281,7 @@ router.put('/:id', authenticateToken, upload.any(), async (req, res) => {
       languages || existingEmployee.languages || '[]',
       documentsStr || existingEmployee.documents || '[]',
       customFieldsStr,
-      age !== undefined ? age : existingEmployee.age,
+      birthdate !== undefined ? birthdate : existingEmployee.birthdate,
       id
     );
 
@@ -370,7 +371,7 @@ router.post('/import', authenticateToken, async (req, res) => {
             status=?, notes=?,
             insurance_number=?, bank=?, bank_account=?,
             attendance_base=?, route=?, education=?, graduation_year=?,
-            job_title_ar=?, job_title_en=?, employment_start=?, custom_fields=?, age=?, languages=?
+            job_title_ar=?, job_title_en=?, employment_start=?, custom_fields=?, birthdate=?, languages=?
             WHERE employee_id=?`).run(
             emp.name_ar, emp.name_en, emp.job_title || '',
             emp.department || '', emp.email || '', emp.sector || '', emp.hire_date || '', emp.address || '', emp.phone || '',
@@ -380,7 +381,7 @@ router.post('/import', authenticateToken, async (req, res) => {
             emp.attendance_base || '', emp.route || '', emp.education || '', emp.graduation_year || '',
             emp.job_title_ar || '', emp.job_title_en || '', emp.employment_start || '',
             parseCustomFields(emp.custom_fields, '{}'),
-            emp.age || null,
+            emp.birthdate || null,
             JSON.stringify(emp.languages || []),
             emp.employee_id
           );
@@ -393,7 +394,7 @@ router.post('/import', authenticateToken, async (req, res) => {
             attendance_base, route, education, graduation_year,
             job_title_ar, job_title_en, employment_start,
             custom_fields,
-            password, must_change_password, age, languages)
+            password, must_change_password, birthdate, languages)
             VALUES (?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?)`).run(
             emp.employee_id, emp.name_ar, emp.name_en, emp.job_title || '',
             emp.department || '', emp.email || '', emp.sector || '', emp.hire_date || '', emp.address || '', emp.phone || '',
@@ -404,7 +405,7 @@ router.post('/import', authenticateToken, async (req, res) => {
             emp.job_title_ar || '', emp.job_title_en || '', emp.employment_start || '',
             parseCustomFields(emp.custom_fields, '{}'),
             defaultImportHash, 1,
-            emp.age || null,
+            emp.birthdate || null,
             JSON.stringify(emp.languages || [])
           );
           imported++;

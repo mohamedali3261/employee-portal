@@ -133,6 +133,7 @@ function mapEmployeeFromBackend(emp) {
     hireDate: emp.hire_date,
     address: emp.address,
     phone: emp.phone,
+    phone2: emp.phone2 || '',
     status: emp.status,
     notes: emp.notes,
     profileImage: emp.profile_image ? `/uploads/employees/${emp.profile_image}` : null,
@@ -144,7 +145,7 @@ function mapEmployeeFromBackend(emp) {
     education: emp.education,
     graduationYear: emp.graduation_year,
     employmentStart: emp.employment_start || '',
-    age: emp.age || '',
+    birthdate: emp.birthdate || '',
     languages,
     documents,
     customFields,
@@ -167,6 +168,8 @@ function mapEmployeeToBackend(data) {
   if (data.hireDate !== undefined) mapped.hire_date = data.hireDate
   if (data.address !== undefined) mapped.address = data.address
   if (data.phone !== undefined) mapped.phone = data.phone
+  if (data.phone2 !== undefined) mapped.phone2 = data.phone2
+  if (data.birthdate !== undefined) mapped.birthdate = data.birthdate
   if (data.status !== undefined) mapped.status = data.status
   if (data.notes !== undefined) mapped.notes = data.notes
   if (data.insuranceNumber !== undefined) mapped.insurance_number = data.insuranceNumber

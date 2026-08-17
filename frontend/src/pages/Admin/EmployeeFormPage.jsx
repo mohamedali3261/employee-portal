@@ -100,19 +100,6 @@ export default function EmployeeFormPage() {
           <form className="employee-form" onSubmit={(e) => handleSubmit(e, t)}>
             <div className="form-row-2col">
               <DynamicSectionFields
-                title={t('personalInfo')}
-                icon={User}
-                fields={fieldsFor('personal')}
-                form={form}
-                errors={errors}
-                handleChange={handleChange}
-                handleCustomFieldChange={handleCustomFieldChange}
-                sections={sections}
-                isEdit={isEdit}
-                t={t}
-              />
-
-              <DynamicSectionFields
                 title={t('contactInfo')}
                 icon={Mail}
                 fields={fieldsFor('contact')}

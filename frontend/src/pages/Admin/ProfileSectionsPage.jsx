@@ -1,7 +1,7 @@
 import { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
 import {
-  Plus, Trash2, Loader2, AlertTriangle, LayoutGrid, Pencil
+  Plus, Trash2, Loader2, AlertTriangle, LayoutGrid, Pencil, ChevronUp, ChevronDown
 } from 'lucide-react';
 import toast from 'react-hot-toast';
 import {
@@ -220,6 +220,35 @@ export default function ProfileSectionsPage() {
     }
   };
 
+  const handleMove = async (section, direction) => {
+    const sameColumn = sections.filter(s => Number(s.column_no) === Number(section.column_no));
+    const sorted = [...sameColumn].sort((a, b) => Number(a.sort_order) - Number(b.sort_order));
+    const idx = sorted.findIndex(s => s.id === section.id);
+    if (direction === 'up' && idx <= 0) return;
+    if (direction === 'down' && idx >= sorted.length - 1) return;
+    const swapIdx = direction === 'up' ? idx - 1 : idx + 1;
+    const a = sorted[idx];
+    const b = sorted[swapIdx];
+    try {
+      await Promise.all([
+        updateProfileSection(a.id, { ...a, sort_order: b.sort_order, column_no: Number(a.column_no) }),
+        updateProfileSection(b.id, { ...b, sort_order: a.sort_order, column_no: Number(b.column_no) }),
+      ]);
+      fetchSections();
+    } catch (error) {
+      toast.error(error.message || t('error'));
+    }
+  };
+
+  const getSameColumnIndex = (section) => {
+    const sameCol = sections.filter(s => Number(s.column_no) === Number(section.column_no)).sort((a, b) => Number(a.sort_order) - Number(b.sort_order));
+    return sameCol.findIndex(s => s.id === section.id);
+  };
+
+  const getSameColumnCount = (section) => {
+    return sections.filter(s => Number(s.column_no) === Number(section.column_no)).length;
+  };
+
   const handleLogout = () => {
     localStorage.removeItem('token');
     localStorage.removeItem('admin');
@@ -335,6 +364,24 @@ export default function ProfileSectionsPage() {
                         </td>
                         <td>
                           <div className="action-buttons">
+                            <button
+                              className="action-btn action-btn-edit"
+                              onClick={() => handleMove(section, 'up')}
+                              disabled={getSameColumnIndex(section) <= 0}
+                              title={t('moveUp')}
+                              style={{ opacity: getSameColumnIndex(section) <= 0 ? 0.3 : 1 }}
+                            >
+                              <ChevronUp size={16} />
+                            </button>
+                            <button
+                              className="action-btn action-btn-edit"
+                              onClick={() => handleMove(section, 'down')}
+                              disabled={getSameColumnIndex(section) >= getSameColumnCount(section) - 1}
+                              title={t('moveDown')}
+                              style={{ opacity: getSameColumnIndex(section) >= getSameColumnCount(section) - 1 ? 0.3 : 1 }}
+                            >
+                              <ChevronDown size={16} />
+                            </button>
                             <button
                               className="action-btn action-btn-edit"
                               onClick={() => setEditDialog({ open: true, section })}

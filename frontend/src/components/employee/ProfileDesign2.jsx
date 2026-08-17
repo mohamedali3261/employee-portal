@@ -1,5 +1,5 @@
 import { useState } from 'react'
-import { User, Copy, Check, Phone, Building2, Printer, Download, GraduationCap, Languages, Clock, File, Hash, Shield, Mail, MapPin, ClipboardList, Calendar, CreditCard, StickyNote } from 'lucide-react'
+import { User, Copy, Check, Phone, Building2, Printer, Download, GraduationCap, Languages, Clock, File, Hash, Shield, Mail, MapPin, ClipboardList, Calendar, CreditCard, StickyNote, Plus, X } from 'lucide-react'
 import { useLanguage } from '../../contexts/LanguageContext'
 import { availableLanguages } from '../../pages/Admin/EmployeeFormPage/constants'
 
@@ -51,11 +51,18 @@ function RowLink({ icon: Icon, label, value, type, accent }) {
   )
 }
 
-function Section({ title, children }) {
+function Section({ title, children, centered, onToggle, sectionKey, isCollapsed }) {
   return (
     <div className="d2-section">
-      <h3 className="d2-section-title">{title}</h3>
-      <div className="d2-section-body">{children}</div>
+      <div className={`d2-section-header ${centered ? 'd2-section-header--center' : ''}`}>
+        <h3 className={`d2-section-title ${centered ? 'd2-section-title--center' : ''}`}>{title}</h3>
+        {onToggle && (
+          <button className="d2-section-expand-btn" onClick={() => onToggle(sectionKey)}>
+            {isCollapsed ? <Plus size={16} /> : <X size={16} />}
+          </button>
+        )}
+      </div>
+      <div className={`d2-section-body ${isCollapsed ? 'd2-section-body--collapsed' : ''}`}>{children}</div>
     </div>
   )
 }
@@ -63,10 +70,26 @@ function Section({ title, children }) {
 export default function Design2({ employee, onPrint, onDownloadPdf, customFieldsMeta = [], profileSections = [], sectionFieldDefs = [] }) {
   const { t, language } = useLanguage()
   const [copied, setCopied] = useState(false)
+  const [modalSection, setModalSection] = useState(null)
+  const [collapsedSections, setCollapsedSections] = useState({})
   if (!employee) return null
 
-  const { employeeId, arabicName, englishName, jobTitleAr, jobTitleEn, department, email, sector, hireDate, address, phone, status, notes, profileImage, insuranceNumber, education, employmentStart, languages, documents, customFields = {}, age } = employee
+  const { employeeId, arabicName, englishName, jobTitleAr, jobTitleEn, department, email, sector, hireDate, address, phone, phone2, status, notes, profileImage, insuranceNumber, education, employmentStart, languages, documents, customFields = {}, birthdate } = employee
   const displayName = arabicName || englishName
+
+  const calculateAge = (birthdate) => {
+    if (!birthdate) return null
+    const birth = new Date(birthdate)
+    const today = new Date()
+    let age = today.getFullYear() - birth.getFullYear()
+    const monthDiff = today.getMonth() - birth.getMonth()
+    if (monthDiff < 0 || (monthDiff === 0 && today.getDate() < birth.getDate())) {
+      age--
+    }
+    return age
+  }
+
+  const age = calculateAge(birthdate)
 
   const customFieldDefs = Array.isArray(customFieldsMeta) ? customFieldsMeta : []
   const visibleCustomFields = customFieldDefs
@@ -79,13 +102,12 @@ export default function Design2({ employee, onPrint, onDownloadPdf, customFields
     .filter((field) => field.value !== undefined && field.value !== null && String(field.value).trim() !== '')
 
   const fallbackSections = [
-    { id: 'personal', section_key: 'personal', name_en: t('personalInfo'), name_ar: t('personalInfo'), column_no: 1, sort_order: 10 },
-    { id: 'contact', section_key: 'contact', name_en: t('contactInfo'), name_ar: t('contactInfo'), column_no: 2, sort_order: 20 },
-    { id: 'employment', section_key: 'employment', name_en: t('employmentInfo'), name_ar: t('employmentInfo'), column_no: 2, sort_order: 30 },
-    { id: 'languages', section_key: 'languages', name_en: t('languages'), name_ar: t('languages'), column_no: 1, sort_order: 40 },
-    { id: 'documents', section_key: 'documents', name_en: t('documents'), name_ar: t('documents'), column_no: 2, sort_order: 50 },
-    { id: 'notes', section_key: 'notes', name_en: t('notes'), name_ar: t('notes'), column_no: 2, sort_order: 60 },
-    { id: 'custom', section_key: 'custom', name_en: t('customFields'), name_ar: t('customFields'), column_no: 2, sort_order: 70 },
+    { id: 'employment', section_key: 'employment', name_en: t('employmentInfo'), name_ar: t('employmentInfo'), column_no: 1, sort_order: 1 },
+    { id: 'languages', section_key: 'languages', name_en: t('languages'), name_ar: t('languages'), column_no: 1, sort_order: 2 },
+    { id: 'contact', section_key: 'contact', name_en: t('contactInfo'), name_ar: t('contactInfo'), column_no: 1, sort_order: 3 },
+    { id: 'documents', section_key: 'documents', name_en: t('documents'), name_ar: t('documents'), column_no: 1, sort_order: 4 },
+    { id: 'notes', section_key: 'notes', name_en: t('notes'), name_ar: t('notes'), column_no: 1, sort_order: 5 },
+    { id: 'custom', section_key: 'custom', name_en: t('customFields'), name_ar: t('customFields'), column_no: 1, sort_order: 6 },
   ]
   const sections = Array.isArray(profileSections) && profileSections.length > 0 ? profileSections : fallbackSections
   const customSectionId = sections.find((s) => s.section_key === 'custom')?.id
@@ -181,13 +203,6 @@ export default function Design2({ employee, onPrint, onDownloadPdf, customFields
     return rows.length > 0 ? rows : fallback
   }
 
-  const defaultPersonal = (
-    <>
-      <Row icon={Hash} label={t('employeeId')} value={employeeId} />
-      <Row icon={User} label={t('age')} value={age} />
-      <Row icon={GraduationCap} label={t('education')} value={education} />
-    </>
-  )
   const defaultContact = (
     <>
       <RowLink icon={Phone} label={t('phone')} value={phone} type="tel" />
@@ -196,37 +211,50 @@ export default function Design2({ employee, onPrint, onDownloadPdf, customFields
     </>
   )
   const defaultEmployment = (
-    <>
-      <Row icon={Building2} label={t('department')} value={department} />
-      <Row icon={Shield} label={t('status')} value={status ? t(status) : null} />
-      <Row icon={Building2} label={t('sector')} value={sector} />
-      <Row icon={Calendar} label={t('hireDate')} value={hireDate ? new Date(hireDate).toLocaleDateString() : null} />
-      <Row icon={Calendar} label={t('employmentStartDate')} value={employmentStart ? new Date(employmentStart).toLocaleDateString() : null} />
-      <Row icon={Shield} label={t('insuranceNumber')} value={insuranceNumber} />
-      {experience && (
-        <div className="d2-experience">
-          <div className="d2-exp-label"><Clock size={14} /> {t('experience')}</div>
-          <div className="d2-exp-boxes">
-            <div className="d2-exp-box">
-              <span className="d2-exp-num">{experience.years}</span>
-              <span className="d2-exp-unit">{t('years')}</span>
-            </div>
-            {experience.months > 0 && (
-              <div className="d2-exp-box">
-                <span className="d2-exp-num">{experience.months}</span>
-                <span className="d2-exp-unit">{t('months')}</span>
-              </div>
-            )}
-            {experience.days > 0 && (
-              <div className="d2-exp-box">
-                <span className="d2-exp-num">{experience.days}</span>
-                <span className="d2-exp-unit">{t('days')}</span>
-              </div>
-            )}
-          </div>
+    <div className="d2-employment-table">
+      <div className="d2-employment-row">
+        <div className="d2-employment-cell">
+          <span className="d2-employment-label">{t('employeeId')}</span>
+          <span className="d2-employment-value">{employeeId}</span>
         </div>
-      )}
-    </>
+        <div className="d2-employment-cell">
+          <span className="d2-employment-label">{t('arabicName')}</span>
+          <span className="d2-employment-value">{arabicName}</span>
+        </div>
+        <div className="d2-employment-cell">
+          <span className="d2-employment-label">{t('englishName')}</span>
+          <span className="d2-employment-value">{englishName}</span>
+        </div>
+      </div>
+      <div className="d2-employment-row">
+        <div className="d2-employment-cell">
+          <span className="d2-employment-label">{t('position')}</span>
+          <span className="d2-employment-value">{language === 'ar' ? jobTitleAr : jobTitleEn}</span>
+        </div>
+        <div className="d2-employment-cell">
+          <span className="d2-employment-label">{t('department')}</span>
+          <span className="d2-employment-value">{department}</span>
+        </div>
+        <div className="d2-employment-cell">
+          <span className="d2-employment-label">{t('sector')}</span>
+          <span className="d2-employment-value">{sector}</span>
+        </div>
+      </div>
+      <div className="d2-employment-row">
+        <div className="d2-employment-cell">
+          <span className="d2-employment-label">{t('startDate')}</span>
+          <span className="d2-employment-value">{employmentStart ? new Date(employmentStart).toLocaleDateString() : null}</span>
+        </div>
+        <div className="d2-employment-cell">
+          <span className="d2-employment-label">{t('birthdate')}</span>
+          <span className="d2-employment-value">
+            {birthdate ? `${new Date(birthdate).toLocaleDateString()} ${age !== null ? `(${age})` : ''}` : ''}
+          </span>
+        </div>
+        <div className="d2-employment-cell">
+        </div>
+      </div>
+    </div>
   )
   const defaultNotes = () => {
     if (!notes) return null
@@ -239,12 +267,12 @@ export default function Design2({ employee, onPrint, onDownloadPdf, customFields
 
   const sectionContent = (section) => {
     switch (section.section_key) {
-      case 'personal':
-        return renderBuiltinRows('personal', defaultPersonal)
       case 'contact':
         return renderBuiltinRows('contact', defaultContact)
       case 'employment':
         return renderBuiltinRows('employment', defaultEmployment)
+      case 'education':
+        return null
       case 'languages': {
         if (!languages || languages.length === 0) return null
         return (
@@ -302,11 +330,25 @@ export default function Design2({ employee, onPrint, onDownloadPdf, customFields
   }
 
   const renderedSections = sections
+    .sort((a, b) => Number(a.sort_order || 0) - Number(b.sort_order || 0))
     .map((section) => ({ section, content: sectionContent(section) }))
     .filter(({ content }) => content !== null && content !== undefined)
 
   const leftSections = renderedSections.filter(({ section }) => Number(section.column_no) === 1)
   const rightSections = renderedSections.filter(({ section }) => Number(section.column_no) !== 1)
+
+  const isEmploymentSection = (sectionKey) => sectionKey === 'employment'
+
+  const handleToggleSection = (sectionKey) => {
+    setCollapsedSections(prev => ({
+      ...prev,
+      [sectionKey]: !prev[sectionKey]
+    }))
+  }
+
+  const handleExpand = (sectionKey) => {
+    setModalSection(sectionKey)
+  }
 
   const handleCopy = async () => {
     try { await navigator.clipboard.writeText(String(employeeId)) } catch {}
@@ -318,23 +360,12 @@ export default function Design2({ employee, onPrint, onDownloadPdf, customFields
       <div className="d2-header">
         <div className="d2-header-line"></div>
         <div className="d2-header-top">
-          <button className="d2-copy-btn" onClick={handleCopy} title={t('copyId')}>
-            {copied ? <Check size={14} /> : <Copy size={14} />}
-            <span>{employeeId}</span>
-          </button>
           <span className={`d2-status ${status === 'active' ? 'd2-status--active' : status === 'inactive' ? 'd2-status--inactive' : 'd2-status--resigned'}`}>
             {status === 'active' ? t('active') : status === 'inactive' ? t('inactive') : t('resigned')}
           </span>
         </div>
         <div className="d2-header-main">
           <ProfileImage photo={profileImage} name={displayName} />
-          <div className="d2-header-info">
-            <h1 className="d2-name">{displayName}</h1>
-            {arabicName && englishName && englishName !== arabicName && <p className="d2-name-alt">{englishName}</p>}
-            <div className="d2-meta">
-              {department && <span className="d2-meta-item"><Building2 size={14} /> {department}</span>}
-            </div>
-          </div>
         </div>
       </div>
 
@@ -342,12 +373,25 @@ export default function Design2({ employee, onPrint, onDownloadPdf, customFields
         <div className="d2-cols">
           <div className="d2-col">
             {leftSections.map(({ section, content }) => (
-              <Section key={section.section_key || section.id} title={sectionTitle(section)}>{content}</Section>
+              <Section 
+                key={section.section_key || section.id} 
+                title={sectionTitle(section)} 
+                centered={isEmploymentSection(section.section_key)}
+                onToggle={handleToggleSection}
+                sectionKey={section.section_key}
+                isCollapsed={collapsedSections[section.section_key]}
+              >{content}</Section>
             ))}
           </div>
           <div className="d2-col">
             {rightSections.map(({ section, content }) => (
-              <Section key={section.section_key || section.id} title={sectionTitle(section)}>{content}</Section>
+              <Section 
+                key={section.section_key || section.id} 
+                title={sectionTitle(section)}
+                onToggle={handleToggleSection}
+                sectionKey={section.section_key}
+                isCollapsed={collapsedSections[section.section_key]}
+              >{content}</Section>
             ))}
           </div>
         </div>
@@ -357,6 +401,23 @@ export default function Design2({ employee, onPrint, onDownloadPdf, customFields
         <button className="d2-btn d2-btn--print" onClick={onPrint}><Printer size={16} /><span>{t('printProfile')}</span></button>
         <button className="d2-btn d2-btn--pdf" onClick={onDownloadPdf}><Download size={16} /><span>{t('downloadPdf')}</span></button>
       </div>
+
+      {modalSection && (
+        <div className="d2-modal-overlay" onClick={() => setModalSection(null)}>
+          <div className="d2-modal-content" onClick={(e) => e.stopPropagation()}>
+            <div className="d2-modal-header">
+              <h3>{sectionTitle(sections.find(s => s.section_key === modalSection))}</h3>
+              <button className="d2-modal-close" onClick={() => setModalSection(null)}><X size={20} /></button>
+            </div>
+            <div className="d2-modal-body">
+              {modalSection === 'employment_details' && defaultEmploymentDetails}
+              {modalSection === 'education' && defaultEducation}
+              {modalSection === 'contact' && defaultContact}
+              {modalSection === 'personal' && defaultPersonal}
+            </div>
+          </div>
+        </div>
+      )}
     </div>
   )
 }

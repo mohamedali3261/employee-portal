@@ -10,16 +10,17 @@
     "postinstall": "chmod +x node_modules/.bin/vite || true"
   },
   "dependencies": {
-    "react": "^18.2.0",
-    "react-dom": "^18.2.0",
-    "react-router-dom": "^6.21.3",
-    "react-hot-toast": "^2.4.1",
-    "recharts": "^2.10.4",
-    "xlsx": "^0.18.5",
     "html2canvas": "^1.4.1",
     "jspdf": "^2.5.1",
+    "lucide-react": "^0.312.0",
     "qrcode.react": "^3.1.0",
-    "lucide-react": "^0.312.0"
+    "react": "^18.2.0",
+    "react-datepicker": "^9.1.0",
+    "react-dom": "^18.2.0",
+    "react-hot-toast": "^2.4.1",
+    "react-router-dom": "^6.21.3",
+    "recharts": "^2.10.4",
+    "xlsx": "^0.18.5"
   },
   "devDependencies": {
     "@types/react": "^18.2.48",

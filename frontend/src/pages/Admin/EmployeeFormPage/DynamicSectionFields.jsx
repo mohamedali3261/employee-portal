@@ -1,5 +1,7 @@
 import FormField from './FormField';
 import { useLanguage } from '../../../contexts/LanguageContext';
+import DatePicker from 'react-datepicker';
+import 'react-datepicker/dist/react-datepicker.css';
 
 function StatusToggle({ value, onChange, t }) {
   const options = [
@@ -26,7 +28,9 @@ function StatusToggle({ value, onChange, t }) {
 function FieldInput({ field, form, errors, handleChange, handleCustomFieldChange, sections, isEdit, t, language }) {
   const isBuiltin = Number(field.is_builtin) === 1;
   const key = field.field_key;
-  const value = isBuiltin ? form[key] : (form.customFields?.[key] || '');
+  const value = isBuiltin ? (form[key] ?? '') : (form.customFields?.[key] ?? '');
+
+  const label = (lang) => lang === 'ar' && field.name_ar ? field.name_ar : field.name_en;
 
   if (isBuiltin && key === 'status') {
     return <StatusToggle value={value || 'active'} onChange={handleChange} t={t} />;
@@ -63,21 +67,48 @@ function FieldInput({ field, form, errors, handleChange, handleCustomFieldChange
     );
   }
 
-  if (isBuiltin && key === 'age') {
+  if (isBuiltin && key === 'birthdate' || key === 'hireDate' || key === 'employmentStart') {
+    const fieldName = key === 'birthdate' ? 'birthdate' : key === 'hireDate' ? 'hireDate' : 'employmentStart';
+
+    const calculateAge = (birthdate) => {
+      if (!birthdate) return null;
+      const birth = new Date(birthdate);
+      const today = new Date();
+      let age = today.getFullYear() - birth.getFullYear();
+      const monthDiff = today.getMonth() - birth.getMonth();
+      if (monthDiff < 0 || (monthDiff === 0 && today.getDate() < birth.getDate())) {
+        age--;
+      }
+      return age;
+    };
+
+    const age = key === 'birthdate' ? calculateAge(value) : null;
+
     return (
-      <input
-        type="number"
-        name="age"
-        className="form-input"
-        value={value || ''}
-        onChange={handleChange}
-        min="18"
-        max="100"
-      />
+      <div style={{ display: 'flex', gap: '8px', alignItems: 'center' }}>
+        <DatePicker
+          selected={value ? new Date(value) : null}
+          onChange={(date) => handleChange({ target: { name: fieldName, value: date ? date.toISOString().split('T')[0] : '' } })}
+          dateFormat="yyyy-MM-dd"
+          className="form-input"
+          placeholderText={label(language)}
+          showYearDropdown
+          scrollableYearDropdown
+          yearDropdownItemNumber={100}
+          popperPlacement="top-start"
+        />
+        {age !== null && (
+          <span style={{ fontSize: '0.9rem', color: '#666', whiteSpace: 'nowrap' }}>
+            ({age} {language === 'ar' ? 'سنة' : 'years'})
+          </span>
+        )}
+      </div>
     );
   }
 
-  const label = (lang) => lang === 'ar' && field.name_ar ? field.name_ar : field.name_en;
+  if (isBuiltin && key === 'age') {
+    return null;
+  }
 
   if (field.type === 'textarea') {
     return (

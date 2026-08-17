@@ -41,9 +41,10 @@ const fileStorage = multer.diskStorage({
   },
   filename: (req, file, cb) => {
     if (file.fieldname === 'profile_image') {
-      const employeeId = req.body.employee_id || req.params.id || Date.now();
+      // Use timestamp-based filename to ensure uniqueness, will be renamed later if needed
+      const timestamp = Date.now() + '-' + Math.round(Math.random() * 1E9);
       const ext = path.extname(file.originalname).toLowerCase();
-      cb(null, employeeId + ext);
+      cb(null, timestamp + ext);
     } else {
       const unique = Date.now() + '-' + Math.round(Math.random() * 1E9);
       const ext = path.extname(file.originalname).toLowerCase();

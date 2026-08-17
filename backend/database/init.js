@@ -64,6 +64,7 @@ async function initDatabase() {
         hire_date TEXT,
         address TEXT,
         phone TEXT,
+        phone2 TEXT,
         status TEXT DEFAULT 'active',
         notes TEXT,
         profile_image TEXT,
@@ -83,7 +84,7 @@ async function initDatabase() {
         password TEXT,
         must_change_password INTEGER DEFAULT 0,
         custom_fields TEXT,
-        age INTEGER,
+        birthdate TEXT,
         created_at TIMESTAMPTZ DEFAULT NOW(),
         updated_at TIMESTAMPTZ DEFAULT NOW()
       )
@@ -199,7 +200,7 @@ async function initDatabase() {
         { key: 'personal', name_en: 'Personal Information', name_ar: 'المعلومات الشخصية', sort_order: 10, column_no: 1 },
         { key: 'contact', name_en: 'Contact Information', name_ar: 'معلومات الاتصال', sort_order: 20, column_no: 2 },
         { key: 'employment', name_en: 'Employment Details', name_ar: 'بيانات التوظيف', sort_order: 30, column_no: 2 },
-        { key: 'languages', name_en: 'Languages', name_ar: 'اللغات', sort_order: 40, column_no: 1 },
+        { key: 'languages', name_en: 'Languages', name_ar: 'اللغات', sort_order: 35, column_no: 2 },
         { key: 'documents', name_en: 'Documents', name_ar: 'المستندات', sort_order: 50, column_no: 2 },
         { key: 'notes', name_en: 'Notes', name_ar: 'ملاحظات', sort_order: 60, column_no: 2 },
         { key: 'custom', name_en: 'Custom Fields', name_ar: 'الحقول المخصصة', sort_order: 70, column_no: 2 },

@@ -3,3 +3,23 @@
 
 # Log files
 *.log
+
+# Dependencies
+node_modules/
+
+# Build output
+dist/
+build/
+
+# IDE
+.vscode/
+
+# Uploads
+backend/uploads/
+
+# Vite cache
+frontend/.vite/
+
+# OS files
+Thumbs.db
+.DS_Store
