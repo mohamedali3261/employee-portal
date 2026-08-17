@@ -99,82 +99,86 @@ export default function EmployeeFormPage() {
           </div>
 
           <form className="employee-form" onSubmit={(e) => handleSubmit(e, t)}>
-            <div className="form-row-2col">
-              <DynamicSectionFields
-                title={t('contactInfo')}
-                icon={Mail}
-                fields={fieldsFor('contact')}
-                form={form}
-                errors={errors}
-                handleChange={handleChange}
-                handleCustomFieldChange={handleCustomFieldChange}
-                sections={sections}
-                isEdit={isEdit}
-                t={t}
-              />
+            <div className="form-layout-sidebar">
+              <div className="form-sidebar-left">
+                <ProfilePicture
+                  imagePreview={imagePreview}
+                  handleImageChange={handleImageChange}
+                  handleImageUrl={handleImageUrl}
+                  removeImage={removeImage}
+                  t={t}
+                />
+              </div>
+
+              <div className="form-sidebar-right">
+                <div className="form-row-2col">
+                  <DynamicSectionFields
+                    title={t('contactInfo')}
+                    icon={Mail}
+                    fields={fieldsFor('contact')}
+                    form={form}
+                    errors={errors}
+                    handleChange={handleChange}
+                    handleCustomFieldChange={handleCustomFieldChange}
+                    sections={sections}
+                    isEdit={isEdit}
+                    t={t}
+                  />
+
+                  <DynamicSectionFields
+                    title={t('employmentInfo')}
+                    icon={Briefcase}
+                    fields={fieldsFor('employment')}
+                    form={form}
+                    errors={errors}
+                    handleChange={handleChange}
+                    handleCustomFieldChange={handleCustomFieldChange}
+                    sections={sections}
+                    isEdit={isEdit}
+                    t={t}
+                  />
+                </div>
+
+                <div className="form-row-2col">
+                  <DynamicSectionFields
+                    title={t('notes')}
+                    icon={StickyNote}
+                    fields={fieldsFor('notes')}
+                    form={form}
+                    errors={errors}
+                    handleChange={handleChange}
+                    handleCustomFieldChange={handleCustomFieldChange}
+                    sections={sections}
+                    isEdit={isEdit}
+                    t={t}
+                  />
+
+                  <Languages
+                    form={form}
+                    handleAddLanguage={handleAddLanguage}
+                    handleRemoveLanguage={handleRemoveLanguage}
+                    handleLanguageChange={handleLanguageChange}
+                    t={t}
+                  />
+                </div>
+
+                <Documents
+                  form={form}
+                  handleAddDocument={handleAddDocument}
+                  handleRemoveDocument={handleRemoveDocument}
+                  handleDocumentChange={handleDocumentChange}
+                  handleDocumentFileChange={handleDocumentFileChange}
+                  t={t}
+                />
+
+                <CustomFields
+                  form={form}
+                  customFieldDefs={customFieldDefs}
+                  profileSections={profileSections}
+                  handleCustomFieldChange={handleCustomFieldChange}
+                />
+              </div>
             </div>
-
-            <div className="form-row-2col">
-              <DynamicSectionFields
-                title={t('employmentInfo')}
-                icon={Briefcase}
-                fields={fieldsFor('employment')}
-                form={form}
-                errors={errors}
-                handleChange={handleChange}
-                handleCustomFieldChange={handleCustomFieldChange}
-                sections={sections}
-                isEdit={isEdit}
-                t={t}
-              />
-
-              <DynamicSectionFields
-                title={t('notes')}
-                icon={StickyNote}
-                fields={fieldsFor('notes')}
-                form={form}
-                errors={errors}
-                handleChange={handleChange}
-                handleCustomFieldChange={handleCustomFieldChange}
-                sections={sections}
-                isEdit={isEdit}
-                t={t}
-              />
-            </div>
-
-            <div className="form-row-2col">
-              <Languages
-                form={form}
-                handleAddLanguage={handleAddLanguage}
-                handleRemoveLanguage={handleRemoveLanguage}
-                handleLanguageChange={handleLanguageChange}
-                t={t}
-              />
-
-              <Documents
-                form={form}
-                handleAddDocument={handleAddDocument}
-                handleRemoveDocument={handleRemoveDocument}
-                handleDocumentChange={handleDocumentChange}
-                handleDocumentFileChange={handleDocumentFileChange}
-                t={t}
-              />
-            </div>
-
-            <CustomFields
-              form={form}
-              customFieldDefs={customFieldDefs}
-              profileSections={profileSections}
-              handleCustomFieldChange={handleCustomFieldChange}
-            />
-
-            <ProfilePicture
-              imagePreview={imagePreview}
-              handleImageChange={handleImageChange}
-              handleImageUrl={handleImageUrl}
-              removeImage={removeImage}
-              t={t}
-            />
 
             <div className="form-actions">
               <button
