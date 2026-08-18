@@ -45,6 +45,8 @@ export const initialForm = {
   profileImage: null,
   education: '',
   employmentStart: '',
+  directManager: '',
+  certifications: '',
   languages: [],
   documents: [],
   customFields: {}

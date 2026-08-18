@@ -146,6 +146,8 @@ function mapEmployeeFromBackend(emp) {
     education: emp.education,
     graduationYear: emp.graduation_year,
     employmentStart: emp.employment_start || '',
+    directManager: emp.direct_manager || '',
+    certifications: emp.certifications || '',
     birthdate: emp.birthdate || '',
     languages,
     documents: documents.map(d => {
@@ -184,6 +186,8 @@ function mapEmployeeToBackend(data) {
   if (data.education !== undefined) mapped.education = data.education
   if (data.graduationYear !== undefined) mapped.graduation_year = data.graduationYear
   if (data.employmentStart !== undefined) mapped.employment_start = data.employmentStart
+  if (data.directManager !== undefined) mapped.direct_manager = data.directManager
+  if (data.certifications !== undefined) mapped.certifications = data.certifications
   if (data.age !== undefined) mapped.age = data.age
   if (data.languages !== undefined) mapped.languages = JSON.stringify(data.languages || [])
   if (data.documents !== undefined) mapped.documents = JSON.stringify(data.documents || [])

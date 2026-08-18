@@ -85,10 +85,36 @@ async function initDatabase() {
         must_change_password INTEGER DEFAULT 0,
         custom_fields TEXT,
         birthdate TEXT,
+        direct_manager TEXT,
+        certifications TEXT,
         created_at TIMESTAMPTZ DEFAULT NOW(),
         updated_at TIMESTAMPTZ DEFAULT NOW()
       )
     `);
+
+    // ── Migration: add new columns if missing ──
+    const colCheck = await client.query(`SELECT column_name FROM information_schema.columns WHERE table_name = 'employees' AND column_name = 'direct_manager'`);
+    if (colCheck.rows.length === 0) {
+      await client.query('ALTER TABLE employees ADD COLUMN direct_manager TEXT');
+      await client.query('ALTER TABLE employees ADD COLUMN certifications TEXT');
+    }
+
+    // ── Migration: add new section_fields if missing ──
+    const dmFieldCheck = await client.query(`SELECT id FROM section_fields WHERE field_key = 'directManager'`);
+    if (dmFieldCheck.rows.length === 0) {
+      const empSection = await client.query(`SELECT id FROM profile_sections WHERE section_key = 'employment'`);
+      if (empSection.rows.length > 0) {
+        const empSectionId = empSection.rows[0].id;
+        await client.query(
+          'INSERT INTO section_fields (field_key, name_en, name_ar, type, section_id, is_builtin, is_visible, required, sort_order) VALUES ($1, $2, $3, $4, $5, 1, 1, 0, $6)',
+          ['directManager', 'Direct Manager', 'المدير المباشر', 'text', empSectionId, 90]
+        );
+        await client.query(
+          'INSERT INTO section_fields (field_key, name_en, name_ar, type, section_id, is_builtin, is_visible, required, sort_order) VALUES ($1, $2, $3, $4, $5, 1, 1, 0, $6)',
+          ['certifications', 'Certifications', 'الشهادات', 'textarea', empSectionId, 100]
+        );
+      }
+    }
 
     await client.query(`
       CREATE TABLE IF NOT EXISTS admin_users (
@@ -237,6 +263,8 @@ async function initDatabase() {
         { key: 'hireDate', name_en: 'Hire Date', name_ar: 'تاريخ التعيين', type: 'date', section: 'employment', sort: 60 },
         { key: 'employmentStart', name_en: 'Employment Start Date', name_ar: 'تاريخ بداية العمل', type: 'date', section: 'employment', sort: 70 },
         { key: 'insuranceNumber', name_en: 'Insurance Number', name_ar: 'رقم التأمين', type: 'text', section: 'employment', sort: 80 },
+        { key: 'directManager', name_en: 'Direct Manager', name_ar: 'المدير المباشر', type: 'text', section: 'employment', sort: 90 },
+        { key: 'certifications', name_en: 'Certifications', name_ar: 'الشهادات', type: 'textarea', section: 'employment', sort: 100 },
         { key: 'notes', name_en: 'Notes', name_ar: 'ملاحظات', type: 'textarea', section: 'notes', sort: 10 },
       ];
 
