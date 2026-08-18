@@ -74,7 +74,7 @@ export default function Design2({ employee, onPrint, onDownloadPdf, customFields
   const [collapsedSections, setCollapsedSections] = useState({})
   if (!employee) return null
 
-  const { employeeId, arabicName, englishName, jobTitleAr, jobTitleEn, department, email, sector, hireDate, address, phone, phone2, status, notes, profileImage, insuranceNumber, education, employmentStart, languages, documents, customFields = {}, birthdate } = employee
+  const { employeeId, arabicName, englishName, jobTitleAr, jobTitleEn, department, email, sector, hireDate, address, phone, phone2, status, notes, profileImage, insuranceNumber, education, employmentStart, directManager, certifications, languages, documents, customFields = {}, birthdate } = employee
   const displayName = arabicName || englishName
 
   const calculateAge = (birthdate) => {
@@ -142,6 +142,8 @@ export default function Design2({ employee, onPrint, onDownloadPdf, customFields
       case 'bank': return CreditCard
       case 'bankAccount': return CreditCard
       case 'notes': return StickyNote
+      case 'directManager': return User
+      case 'certifications': return ClipboardList
       default: return ClipboardList
     }
   }
@@ -170,6 +172,7 @@ export default function Design2({ employee, onPrint, onDownloadPdf, customFields
       if (field.field_key === 'email') return <RowLink key={field.id} icon={Mail} label={label} value={value} type="mail" />
       if (field.field_key === 'phone') return <RowLink key={field.id} icon={Phone} label={label} value={value} type="tel" />
       if (field.field_key === 'notes') return <div key={field.id} className="d2-notes">{value}</div>
+      if (field.field_key === 'certifications') return <div key={field.id} className="d2-notes">{value}</div>
       if (field.type === 'date') return <Row key={field.id} icon={fieldIcon(field.field_key)} label={label} value={value ? new Date(value).toLocaleDateString() : null} />
       return <Row key={field.id} icon={fieldIcon(field.field_key)} label={label} value={value} />
     }).filter(Boolean)

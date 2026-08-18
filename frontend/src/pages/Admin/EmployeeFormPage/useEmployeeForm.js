@@ -263,6 +263,8 @@ export function useEmployeeForm() {
         notes: form.notes,
         education: form.education,
         employmentStart: form.employmentStart,
+        directManager: form.directManager,
+        certifications: form.certifications,
         languages: form.languages,
         documents: form.documents,
         customFields: form.customFields
