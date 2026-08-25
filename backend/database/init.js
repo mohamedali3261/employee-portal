@@ -131,6 +131,16 @@ async function initDatabase() {
     // ── Update directManager type from text to dropdown ──
     await client.query(`UPDATE section_fields SET type = 'dropdown' WHERE field_key = 'directManager' AND type = 'text'`);
 
+    // ── Migration: convert plain-text certifications to JSON arrays ──
+    const certRows = await client.query(`SELECT id, certifications FROM employees WHERE certifications IS NOT NULL AND certifications != ''`);
+    for (const row of certRows.rows) {
+      const val = row.certifications;
+      try { JSON.parse(val) } catch {
+        const arr = val.split(',').map(s => s.trim()).filter(Boolean);
+        await client.query('UPDATE employees SET certifications = $1 WHERE id = $2', [JSON.stringify(arr), row.id]);
+      }
+    }
+
     await client.query(`
       CREATE TABLE IF NOT EXISTS admin_users (
         id SERIAL PRIMARY KEY,

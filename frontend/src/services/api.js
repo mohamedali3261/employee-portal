@@ -147,7 +147,7 @@ function mapEmployeeFromBackend(emp) {
     graduationYear: emp.graduation_year,
     employmentStart: emp.employment_start || '',
     directManager: emp.direct_manager || '',
-    certifications: (() => { try { return emp.certifications ? (typeof emp.certifications === 'string' ? JSON.parse(emp.certifications) : emp.certifications) : [] } catch { return [] } })(),
+    certifications: (() => { try { if (!emp.certifications) return []; if (Array.isArray(emp.certifications)) return emp.certifications; if (typeof emp.certifications === 'string') { const parsed = JSON.parse(emp.certifications); return Array.isArray(parsed) ? parsed : [] } return [] } catch { return emp.certifications ? emp.certifications.split(',').map(s => s.trim()).filter(Boolean) : [] } })(),
     category: emp.category || '',
     birthdate: emp.birthdate || '',
     languages,
