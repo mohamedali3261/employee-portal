@@ -8,6 +8,7 @@ import usePageTitle from '../../hooks/usePageTitle';
 import DynamicSectionFields from './EmployeeFormPage/DynamicSectionFields';
 import Languages from './EmployeeFormPage/Languages';
 import Documents from './EmployeeFormPage/Documents';
+import Certifications from './EmployeeFormPage/Certifications';
 import ProfilePicture from './EmployeeFormPage/ProfilePicture';
 import CustomFields from './EmployeeFormPage/CustomFields';
 
@@ -35,6 +36,7 @@ export default function EmployeeFormPage() {
     handleAddLanguage,
     handleRemoveLanguage,
     handleLanguageChange,
+    handleCertificationsChange,
     handleAddDocument,
     handleRemoveDocument,
     handleDocumentChange,
@@ -51,7 +53,7 @@ export default function EmployeeFormPage() {
   );
   const fieldsFor = (sectionKey) =>
     sectionFields.filter(
-      (f) => sectionKeyById[Number(f.section_id)] === sectionKey && Number(f.is_visible) === 1
+      (f) => sectionKeyById[Number(f.section_id)] === sectionKey && Number(f.is_visible) === 1 && f.field_key !== 'certifications'
     );
 
   const handleLogout = () => {
@@ -163,6 +165,12 @@ export default function EmployeeFormPage() {
             </div>
 
             <div className="form-row-2col">
+              <Certifications
+                certifications={form.certifications}
+                onChange={handleCertificationsChange}
+                t={t}
+              />
+
               <Documents
                 form={form}
                 handleAddDocument={handleAddDocument}

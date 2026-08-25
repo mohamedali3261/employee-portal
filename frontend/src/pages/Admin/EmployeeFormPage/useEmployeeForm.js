@@ -107,7 +107,7 @@ export function useEmployeeForm() {
         education: emp.education || '',
         employmentStart: emp.employmentStart || '',
         directManager: emp.directManager || '',
-        certifications: emp.certifications || '',
+        certifications: Array.isArray(emp.certifications) ? emp.certifications : (emp.certifications ? (() => { try { return JSON.parse(emp.certifications) } catch { return [] } })() : []),
         category: emp.category || '',
         languages: emp.languages || [],
         documents: emp.documents || [],
@@ -184,6 +184,10 @@ export function useEmployeeForm() {
         i === index ? { ...lang, [field]: value } : lang
       )
     }));
+  };
+
+  const handleCertificationsChange = (certs) => {
+    setForm((prev) => ({ ...prev, certifications: certs }));
   };
 
   const handleAddDocument = () => {
@@ -327,6 +331,7 @@ export function useEmployeeForm() {
     handleAddLanguage,
     handleRemoveLanguage,
     handleLanguageChange,
+    handleCertificationsChange,
     handleAddDocument,
     handleRemoveDocument,
     handleDocumentChange,

@@ -147,7 +147,7 @@ function mapEmployeeFromBackend(emp) {
     graduationYear: emp.graduation_year,
     employmentStart: emp.employment_start || '',
     directManager: emp.direct_manager || '',
-    certifications: emp.certifications || '',
+    certifications: (() => { try { return emp.certifications ? (typeof emp.certifications === 'string' ? JSON.parse(emp.certifications) : emp.certifications) : [] } catch { return [] } })(),
     category: emp.category || '',
     birthdate: emp.birthdate || '',
     languages,
@@ -188,7 +188,7 @@ function mapEmployeeToBackend(data) {
   if (data.graduationYear !== undefined) mapped.graduation_year = data.graduationYear
   if (data.employmentStart !== undefined) mapped.employment_start = data.employmentStart
   if (data.directManager !== undefined) mapped.direct_manager = data.directManager
-  if (data.certifications !== undefined) mapped.certifications = data.certifications
+  if (data.certifications !== undefined) mapped.certifications = JSON.stringify(data.certifications || [])
   if (data.category !== undefined) mapped.category = data.category
   if (data.age !== undefined) mapped.age = data.age
   if (data.languages !== undefined) mapped.languages = JSON.stringify(data.languages || [])

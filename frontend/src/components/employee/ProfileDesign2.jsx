@@ -173,7 +173,23 @@ export default function Design2({ employee, onPrint, onDownloadPdf, customFields
       if (field.field_key === 'email') return <RowLink key={field.id} icon={Mail} label={label} value={value} type="mail" />
       if (field.field_key === 'phone') return <RowLink key={field.id} icon={Phone} label={label} value={value} type="tel" />
       if (field.field_key === 'notes') return <div key={field.id} className="d2-notes">{value}</div>
-      if (field.field_key === 'certifications') return <div key={field.id} className="d2-notes">{value}</div>
+      if (field.field_key === 'certifications') {
+        let certs = value
+        if (typeof certs === 'string') {
+          try { certs = JSON.parse(certs) } catch { certs = certs ? certs.split(',').map(s => s.trim()).filter(Boolean) : [] }
+        }
+        if (!Array.isArray(certs) || certs.length === 0) return null
+        return (
+          <div key={field.id} className="d2-certifications">
+            <div className="d2-cert-title"><ClipboardList size={14} /> {label}</div>
+            {certs.map((c, i) => (
+              <div key={i} className="d2-cert-item">
+                <Check size={12} /> {typeof c === 'string' ? c : c.name || c}
+              </div>
+            ))}
+          </div>
+        )
+      }
       if (field.type === 'date') return <Row key={field.id} icon={fieldIcon(field.field_key)} label={label} value={value ? new Date(value).toLocaleDateString() : null} />
       return <Row key={field.id} icon={fieldIcon(field.field_key)} label={label} value={value} />
     }).filter(Boolean)
