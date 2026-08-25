@@ -25,7 +25,7 @@ function StatusToggle({ value, onChange, t }) {
   );
 }
 
-function FieldInput({ field, form, errors, handleChange, handleCustomFieldChange, sections, isEdit, t, language }) {
+function FieldInput({ field, form, errors, handleChange, handleCustomFieldChange, sections, isEdit, t, language, employees }) {
   const isBuiltin = Number(field.is_builtin) === 1;
   const key = field.field_key;
   const value = isBuiltin ? (form[key] ?? '') : (form.customFields?.[key] ?? '');
@@ -34,6 +34,24 @@ function FieldInput({ field, form, errors, handleChange, handleCustomFieldChange
 
   if (isBuiltin && key === 'status') {
     return <StatusToggle value={value || 'active'} onChange={handleChange} t={t} />;
+  }
+
+  if (isBuiltin && key === 'directManager') {
+    return (
+      <select
+        name="directManager"
+        className="form-input form-select"
+        value={value}
+        onChange={handleChange}
+      >
+        <option value="">{t('select')}...</option>
+        {(employees || []).map((emp) => (
+          <option key={emp.employee_id} value={emp.employee_id}>
+            {emp.employee_id} - {language === 'ar' ? emp.name_ar : emp.name_en}
+          </option>
+        ))}
+      </select>
+    );
   }
 
   if (isBuiltin && key === 'department') {
@@ -135,7 +153,7 @@ function FieldInput({ field, form, errors, handleChange, handleCustomFieldChange
       >
         <option value="">{t('select')}...</option>
         {options.map((opt) => (
-          <option key={opt} value={opt}>{opt}</option>
+          <option key={opt} value={opt}>{t(opt) || opt}</option>
         ))}
       </select>
     );
@@ -154,7 +172,7 @@ function FieldInput({ field, form, errors, handleChange, handleCustomFieldChange
   );
 }
 
-export default function DynamicSectionFields({ title, icon: Icon, fields, form, errors, handleChange, handleCustomFieldChange, sections, isEdit, t }) {
+export default function DynamicSectionFields({ title, icon: Icon, fields, form, errors, handleChange, handleCustomFieldChange, sections, isEdit, t, employees }) {
   if (!fields || fields.length === 0) return null;
 
   const { language } = useLanguage();
@@ -188,6 +206,7 @@ export default function DynamicSectionFields({ title, icon: Icon, fields, form, 
               isEdit={isEdit}
               t={t}
               language={language}
+              employees={employees}
             />
           </FormField>
         ))}

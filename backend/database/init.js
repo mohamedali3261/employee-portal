@@ -107,7 +107,7 @@ async function initDatabase() {
         const empSectionId = empSection.rows[0].id;
         await client.query(
           'INSERT INTO section_fields (field_key, name_en, name_ar, type, section_id, is_builtin, is_visible, required, sort_order) VALUES ($1, $2, $3, $4, $5, 1, 1, 0, $6)',
-          ['directManager', 'Direct Manager', 'المدير المباشر', 'text', empSectionId, 90]
+          ['directManager', 'Direct Manager', 'المدير المباشر', 'dropdown', empSectionId, 90]
         );
         await client.query(
           'INSERT INTO section_fields (field_key, name_en, name_ar, type, section_id, is_builtin, is_visible, required, sort_order) VALUES ($1, $2, $3, $4, $5, 1, 1, 0, $6)',
@@ -115,6 +115,21 @@ async function initDatabase() {
         );
       }
     }
+
+    // ── Migration: add category section_field if missing ──
+    const catFieldCheck = await client.query(`SELECT id FROM section_fields WHERE field_key = 'category'`);
+    if (catFieldCheck.rows.length === 0) {
+      const empSection = await client.query(`SELECT id FROM profile_sections WHERE section_key = 'employment'`);
+      if (empSection.rows.length > 0) {
+        await client.query(
+          'INSERT INTO section_fields (field_key, name_en, name_ar, type, section_id, is_builtin, is_visible, required, sort_order, options) VALUES ($1, $2, $3, $4, $5, 1, 1, 0, $6, $7)',
+          ['category', 'Category', 'الكادر', 'dropdown', empSection.rows[0].id, 110, 'permanent,contract,part_time,temporary']
+        );
+      }
+    }
+
+    // ── Update directManager type from text to dropdown ──
+    await client.query(`UPDATE section_fields SET type = 'dropdown' WHERE field_key = 'directManager' AND type = 'text'`);
 
     await client.query(`
       CREATE TABLE IF NOT EXISTS admin_users (
@@ -263,8 +278,9 @@ async function initDatabase() {
         { key: 'hireDate', name_en: 'Hire Date', name_ar: 'تاريخ التعيين', type: 'date', section: 'employment', sort: 60 },
         { key: 'employmentStart', name_en: 'Employment Start Date', name_ar: 'تاريخ بداية العمل', type: 'date', section: 'employment', sort: 70 },
         { key: 'insuranceNumber', name_en: 'Insurance Number', name_ar: 'رقم التأمين', type: 'text', section: 'employment', sort: 80 },
-        { key: 'directManager', name_en: 'Direct Manager', name_ar: 'المدير المباشر', type: 'text', section: 'employment', sort: 90 },
+        { key: 'directManager', name_en: 'Direct Manager', name_ar: 'المدير المباشر', type: 'dropdown', section: 'employment', sort: 90 },
         { key: 'certifications', name_en: 'Certifications', name_ar: 'الشهادات', type: 'textarea', section: 'employment', sort: 100 },
+        { key: 'category', name_en: 'Category', name_ar: 'الكادر', type: 'dropdown', section: 'employment', options: 'permanent,contract,part_time,temporary', sort: 110 },
         { key: 'notes', name_en: 'Notes', name_ar: 'ملاحظات', type: 'textarea', section: 'notes', sort: 10 },
       ];
 
@@ -272,8 +288,8 @@ async function initDatabase() {
         const sectionId = sectionKeyToId[f.section];
         if (sectionId === undefined) continue;
         await client.query(
-          'INSERT INTO section_fields (field_key, name_en, name_ar, type, section_id, is_builtin, is_visible, required, sort_order) VALUES ($1, $2, $3, $4, $5, 1, 1, $6, $7)',
-          [f.key, f.name_en, f.name_ar, f.type, sectionId, f.required || 0, f.sort]
+          'INSERT INTO section_fields (field_key, name_en, name_ar, type, section_id, is_builtin, is_visible, required, sort_order, options) VALUES ($1, $2, $3, $4, $5, 1, 1, $6, $7, $8)',
+          [f.key, f.name_en, f.name_ar, f.type, sectionId, f.required || 0, f.sort, f.options || null]
         );
       }
     }

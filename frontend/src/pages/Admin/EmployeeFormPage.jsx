@@ -1,3 +1,4 @@
+import { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { Save, X, Loader2, ArrowLeft, User, Briefcase, Mail, StickyNote } from 'lucide-react';
 import { useLanguage } from '../../contexts/LanguageContext';
@@ -10,10 +11,12 @@ import Languages from './EmployeeFormPage/Languages';
 import Documents from './EmployeeFormPage/Documents';
 import ProfilePicture from './EmployeeFormPage/ProfilePicture';
 import CustomFields from './EmployeeFormPage/CustomFields';
+import { getEmployeesList } from '../../services/api';
 
 export default function EmployeeFormPage() {
   const navigate = useNavigate();
   const { t } = useLanguage();
+  const [employees, setEmployees] = useState([]);
 
   const {
     form,
@@ -44,6 +47,10 @@ export default function EmployeeFormPage() {
   } = useEmployeeForm();
 
   usePageTitle(isEdit ? t('editEmployee') : t('addEmployee'));
+
+  useEffect(() => {
+    getEmployeesList().then(setEmployees).catch(() => {});
+  }, []);
 
   const sectionKeyById = Object.fromEntries(
     profileSections.map((s) => [Number(s.id), s.section_key])
@@ -119,6 +126,7 @@ export default function EmployeeFormPage() {
                 sections={sections}
                 isEdit={isEdit}
                 t={t}
+                employees={employees}
               />
 
               <DynamicSectionFields
@@ -132,6 +140,7 @@ export default function EmployeeFormPage() {
                 sections={sections}
                 isEdit={isEdit}
                 t={t}
+                employees={employees}
               />
             </div>
 
@@ -147,6 +156,7 @@ export default function EmployeeFormPage() {
                 sections={sections}
                 isEdit={isEdit}
                 t={t}
+                employees={employees}
               />
 
               <Languages

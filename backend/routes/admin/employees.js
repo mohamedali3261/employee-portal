@@ -6,6 +6,18 @@ const { authenticateToken } = require('../../middleware/auth');
 const { paginate, validateEmployeeId } = require('../../utils/helpers');
 const { upload, renameProfileImage, deleteProfileImage, logActivity } = require('./shared');
 
+// GET /api/admin/employees/list - lightweight list for dropdowns
+router.get('/list', authenticateToken, async (req, res) => {
+  try {
+    const db = getDatabase();
+    const employees = await db.prepare('SELECT employee_id, name_en, name_ar FROM employees WHERE status != ? ORDER BY name_en').all('resigned');
+    res.json({ success: true, data: employees });
+  } catch (error) {
+    console.error('Get employees list error:', error);
+    res.status(500).json({ success: false, message: 'Internal server error' });
+  }
+});
+
 // GET /api/admin/employees
 router.get('/', authenticateToken, async (req, res) => {
   try {
@@ -111,7 +123,7 @@ router.post('/', authenticateToken, upload.any(), async (req, res) => {
       phone, phone2, status, notes,
       insurance_number, bank, bank_account, attendance_base, route, education, graduation_year,
       employment_start, languages, documents,
-      custom_fields, birthdate, direct_manager, certifications
+      custom_fields, birthdate, direct_manager, certifications, category
     } = req.body;
 
     if (!employee_id || !name_ar || !name_en) {
@@ -147,8 +159,8 @@ router.post('/', authenticateToken, upload.any(), async (req, res) => {
     const defaultPassword = bcrypt.hashSync('123456', 12);
 
     const result = await db.prepare(`
-      INSERT INTO employees (employee_id, name_ar, name_en, job_title, job_title_ar, job_title_en, department, email, sector, hire_date, address, phone, phone2, status, notes, profile_image, insurance_number, bank, bank_account, attendance_base, route, education, graduation_year, employment_start, languages, documents, custom_fields, password, must_change_password, birthdate, direct_manager, certifications)
-      VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
+      INSERT INTO employees (employee_id, name_ar, name_en, job_title, job_title_ar, job_title_en, department, email, sector, hire_date, address, phone, phone2, status, notes, profile_image, insurance_number, bank, bank_account, attendance_base, route, education, graduation_year, employment_start, languages, documents, custom_fields, password, must_change_password, birthdate, direct_manager, certifications, category)
+      VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
     `).run(
       employee_id, name_ar, name_en,
       job_title || '', job_title_ar || '', job_title_en || '',
@@ -158,7 +170,7 @@ router.post('/', authenticateToken, upload.any(), async (req, res) => {
       insurance_number || '', bank || '', bank_account || '',
       attendance_base || '', route || '', education || '', graduation_year || '',
       employment_start || '', languages || '[]', processedDocs, customFieldsStr, defaultPassword, 1,
-      birthdate || null, direct_manager || '', certifications || ''
+      birthdate || null, direct_manager || '', certifications || '', category || ''
     );
 
     logActivity('CREATE', 'employee', result.lastInsertRowid, `Created employee ${employee_id} - ${name_en}`);
@@ -187,7 +199,7 @@ router.put('/:id', authenticateToken, upload.any(), async (req, res) => {
       phone, phone2, status, notes,
       insurance_number, bank, bank_account, attendance_base, route, education, graduation_year,
       employment_start, languages, documents,
-      custom_fields, birthdate, direct_manager, certifications
+      custom_fields, birthdate, direct_manager, certifications, category
     } = req.body;
 
     const db = getDatabase();
@@ -260,7 +272,7 @@ router.put('/:id', authenticateToken, upload.any(), async (req, res) => {
         attendance_base = ?, route = ?, education = ?, graduation_year = ?,
         employment_start = ?, languages = ?, documents = ?, custom_fields = ?,
         updated_at = CURRENT_TIMESTAMP, birthdate = ?,
-        direct_manager = ?, certifications = ?
+        direct_manager = ?, certifications = ?, category = ?
       WHERE id = ?
     `).run(
       employee_id || existingEmployee.employee_id,
@@ -293,6 +305,7 @@ router.put('/:id', authenticateToken, upload.any(), async (req, res) => {
       birthdate !== undefined ? birthdate : existingEmployee.birthdate,
       direct_manager !== undefined ? direct_manager : (existingEmployee.direct_manager || ''),
       certifications !== undefined ? certifications : (existingEmployee.certifications || ''),
+      category !== undefined ? category : (existingEmployee.category || ''),
       id
     );
 

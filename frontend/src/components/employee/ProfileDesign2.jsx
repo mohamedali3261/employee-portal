@@ -1,5 +1,5 @@
 import { useState } from 'react'
-import { User, Copy, Check, Phone, Building2, Printer, Download, GraduationCap, Languages, Clock, File, Hash, Shield, Mail, MapPin, ClipboardList, Calendar, CreditCard, StickyNote, Plus, X } from 'lucide-react'
+import { User, Copy, Check, Phone, Building2, Printer, Download, GraduationCap, Languages, Clock, File, Hash, Shield, Mail, MapPin, ClipboardList, Calendar, CreditCard, StickyNote, Plus, X, Briefcase } from 'lucide-react'
 import { useLanguage } from '../../contexts/LanguageContext'
 import { availableLanguages } from '../../pages/Admin/EmployeeFormPage/constants'
 
@@ -74,7 +74,7 @@ export default function Design2({ employee, onPrint, onDownloadPdf, customFields
   const [collapsedSections, setCollapsedSections] = useState({})
   if (!employee) return null
 
-  const { employeeId, arabicName, englishName, jobTitleAr, jobTitleEn, department, email, sector, hireDate, address, phone, phone2, status, notes, profileImage, insuranceNumber, education, employmentStart, directManager, certifications, languages, documents, customFields = {}, birthdate } = employee
+  const { employeeId, arabicName, englishName, jobTitleAr, jobTitleEn, department, email, sector, hireDate, address, phone, phone2, status, notes, profileImage, insuranceNumber, education, employmentStart, directManager, certifications, category, languages, documents, customFields = {}, birthdate } = employee
   const displayName = arabicName || englishName
 
   const calculateAge = (birthdate) => {
@@ -144,6 +144,7 @@ export default function Design2({ employee, onPrint, onDownloadPdf, customFields
       case 'notes': return StickyNote
       case 'directManager': return User
       case 'certifications': return ClipboardList
+      case 'category': return Briefcase
       default: return ClipboardList
     }
   }

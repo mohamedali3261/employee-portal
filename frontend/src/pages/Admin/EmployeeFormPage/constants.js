@@ -47,6 +47,7 @@ export const initialForm = {
   employmentStart: '',
   directManager: '',
   certifications: '',
+  category: '',
   languages: [],
   documents: [],
   customFields: {}

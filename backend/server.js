@@ -15,6 +15,15 @@ const PORT = process.env.PORT || 8889;
 app.disable('x-powered-by');
 app.set('trust proxy', 1);
 
+// ── Static files (before security headers so images load without CSP/CORP restrictions) ──
+app.use('/uploads', express.static(path.join(__dirname, 'uploads'), {
+  maxAge: '1d',
+  etag: true,
+  setHeaders: (res) => {
+    res.setHeader('Cache-Control', 'public, max-age=86400');
+  }
+}));
+
 // ── Helmet: full security headers ──
 app.use(helmet({
   crossOriginResourcePolicy: { policy: "cross-origin" },
@@ -23,7 +32,7 @@ app.use(helmet({
       defaultSrc: ["'self'"],
       scriptSrc: ["'self'"],
       styleSrc: ["'self'", "'unsafe-inline'"],
-      imgSrc: ["'self'", "data:", "blob:"],
+      imgSrc: ["'self'", "data:", "blob:", "http:", "https:"],
       fontSrc: ["'self'"],
       connectSrc: ["'self'"],
       frameSrc: ["'none'"],
@@ -143,15 +152,6 @@ app.use((req, res, next) => {
   }
   next();
 });
-
-// ── Static files ──
-app.use('/uploads', express.static(path.join(__dirname, 'uploads'), {
-  maxAge: '1d',
-  etag: false,
-  setHeaders: (res) => {
-    res.setHeader('Cache-Control', 'private, max-age=86400');
-  }
-}));
 
 // ── Routes ──
 app.use('/api/employee', require('./routes/employee'));

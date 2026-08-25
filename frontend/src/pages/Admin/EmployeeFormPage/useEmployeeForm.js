@@ -265,6 +265,7 @@ export function useEmployeeForm() {
         employmentStart: form.employmentStart,
         directManager: form.directManager,
         certifications: form.certifications,
+        category: form.category,
         languages: form.languages,
         documents: form.documents,
         customFields: form.customFields
