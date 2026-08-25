@@ -1,3 +1,4 @@
+import { useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { Save, X, Loader2, ArrowLeft, User, Briefcase, Mail, StickyNote } from 'lucide-react';
 import { useLanguage } from '../../contexts/LanguageContext';
@@ -27,6 +28,7 @@ export default function EmployeeFormPage() {
     profileSections,
     sectionFields,
     employees,
+    setEmployees,
     isEdit,
     handleChange,
     handleCustomFieldChange,
@@ -60,6 +62,10 @@ export default function EmployeeFormPage() {
     localStorage.removeItem('token');
     localStorage.removeItem('admin');
     navigate('/login');
+  };
+
+  const handleAddEmployeeToList = (newEmp) => {
+    setEmployees((prev) => [...prev, newEmp]);
   };
 
   if (fetching) {
@@ -137,7 +143,7 @@ export default function EmployeeFormPage() {
                 isEdit={isEdit}
                 t={t}
                 employees={employees}
-                navigate={navigate}
+                onAddEmployee={handleAddEmployeeToList}
               />
             </div>
 

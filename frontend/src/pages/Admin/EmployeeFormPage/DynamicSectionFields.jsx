@@ -1,6 +1,7 @@
+import { useState } from 'react';
 import FormField from './FormField';
 import { useLanguage } from '../../../contexts/LanguageContext';
-import { Plus, Pencil } from 'lucide-react';
+import { Plus, Pencil, X } from 'lucide-react';
 import DatePicker from 'react-datepicker';
 import 'react-datepicker/dist/react-datepicker.css';
 
@@ -26,10 +27,12 @@ function StatusToggle({ value, onChange, t }) {
   );
 }
 
-function FieldInput({ field, form, errors, handleChange, handleCustomFieldChange, sections, isEdit, t, language, employees, navigate }) {
+function FieldInput({ field, form, errors, handleChange, handleCustomFieldChange, sections, isEdit, t, language, employees, navigate, onAddEmployee }) {
   const isBuiltin = Number(field.is_builtin) === 1;
   const key = field.field_key;
   const value = isBuiltin ? (form[key] ?? '') : (form.customFields?.[key] ?? '');
+  const [showAddModal, setShowAddModal] = useState(false);
+  const [newManagerName, setNewManagerName] = useState('');
 
   const label = (lang) => lang === 'ar' && field.name_ar ? field.name_ar : field.name_en;
 
@@ -38,34 +41,75 @@ function FieldInput({ field, form, errors, handleChange, handleCustomFieldChange
   }
 
   if (isBuiltin && key === 'directManager') {
+    const handleAddManager = () => {
+      if (!newManagerName.trim()) return;
+      const newId = 'M' + Date.now();
+      const newEmp = { employee_id: newId, name_en: newManagerName.trim(), name_ar: newManagerName.trim() };
+      if (onAddEmployee) onAddEmployee(newEmp);
+      handleChange({ target: { name: 'directManager', value: newId } });
+      setNewManagerName('');
+      setShowAddModal(false);
+    };
+
     return (
-      <div className="direct-manager-field">
-        <select
-          name="directManager"
-          className="form-input form-select"
-          value={value}
-          onChange={handleChange}
-        >
-          <option value="">{t('select')}...</option>
-          {(employees || []).map((emp) => (
-            <option key={emp.employee_id} value={emp.employee_id}>
-              {emp.employee_id} - {language === 'ar' ? emp.name_ar : emp.name_en}
-            </option>
-          ))}
-        </select>
-        <div className="direct-manager-actions">
-          {navigate && (
-            <button type="button" className="btn btn-outline btn-sm" onClick={() => navigate('/admin/employees/new')} title={t('addEmployee')}>
+      <>
+        <div className="direct-manager-field">
+          <select
+            name="directManager"
+            className="form-input form-select"
+            value={value}
+            onChange={handleChange}
+          >
+            <option value="">{t('select')}...</option>
+            {(employees || []).map((emp) => (
+              <option key={emp.employee_id} value={emp.employee_id}>
+                {emp.employee_id} - {language === 'ar' ? emp.name_ar : emp.name_en}
+              </option>
+            ))}
+          </select>
+          <div className="direct-manager-actions">
+            <button type="button" className="btn btn-outline btn-sm" onClick={() => setShowAddModal(true)} title={t('addManager')}>
               <Plus size={14} />
             </button>
-          )}
-          {navigate && value && (
-            <button type="button" className="btn btn-outline btn-sm" onClick={() => navigate(`/admin/employees/edit/${value}`)} title={t('editEmployee')}>
-              <Pencil size={14} />
-            </button>
-          )}
+            {value && (
+              <button type="button" className="btn btn-outline btn-sm" onClick={() => {
+                const emp = (employees || []).find(e => String(e.employee_id) === String(value));
+                if (emp) {
+                  setNewManagerName(language === 'ar' ? emp.name_ar : emp.name_en);
+                  setShowAddModal(true);
+                }
+              }} title={t('editEmployee')}>
+                <Pencil size={14} />
+              </button>
+            )}
+          </div>
         </div>
-      </div>
+        {showAddModal && (
+          <div className="modal-overlay" onClick={() => setShowAddModal(false)}>
+            <div className="modal-content modal-sm" onClick={(e) => e.stopPropagation()}>
+              <div className="modal-header">
+                <h3>{value ? t('editEmployee') : t('addManager')}</h3>
+                <button className="modal-close" onClick={() => setShowAddModal(false)}><X size={18} /></button>
+              </div>
+              <div className="modal-body">
+                <input
+                  type="text"
+                  className="form-input"
+                  value={newManagerName}
+                  onChange={(e) => setNewManagerName(e.target.value)}
+                  placeholder={t('directManager')}
+                  autoFocus
+                  onKeyDown={(e) => { if (e.key === 'Enter') { e.preventDefault(); handleAddManager(); } }}
+                />
+              </div>
+              <div className="modal-footer">
+                <button type="button" className="btn btn-outline" onClick={() => setShowAddModal(false)}>{t('cancel')}</button>
+                <button type="button" className="btn btn-primary" onClick={handleAddManager}>{t('save')}</button>
+              </div>
+            </div>
+          </div>
+        )}
+      </>
     );
   }
 
@@ -187,7 +231,7 @@ function FieldInput({ field, form, errors, handleChange, handleCustomFieldChange
   );
 }
 
-export default function DynamicSectionFields({ title, icon: Icon, fields, form, errors, handleChange, handleCustomFieldChange, sections, isEdit, t, employees, navigate }) {
+export default function DynamicSectionFields({ title, icon: Icon, fields, form, errors, handleChange, handleCustomFieldChange, sections, isEdit, t, employees, onAddEmployee }) {
   if (!fields || fields.length === 0) return null;
 
   const { language } = useLanguage();
@@ -222,7 +266,7 @@ export default function DynamicSectionFields({ title, icon: Icon, fields, form, 
               t={t}
               language={language}
               employees={employees}
-              navigate={navigate}
+              onAddEmployee={onAddEmployee}
             />
           </FormField>
         ))}

@@ -322,6 +322,7 @@ export function useEmployeeForm() {
     profileSections,
     sectionFields,
     employees,
+    setEmployees,
     isEdit,
     handleChange,
     handleCustomFieldChange,
