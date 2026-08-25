@@ -1,7 +1,7 @@
 import { useState, useEffect } from 'react';
 import { useNavigate, useParams } from 'react-router-dom';
 import toast from 'react-hot-toast';
-import { createEmployee, updateEmployee, getEmployees, getSections, getCustomFields, getProfileSections, getSectionFields } from '../../../services/api';
+import { createEmployee, updateEmployee, getEmployees, getSections, getCustomFields, getProfileSections, getSectionFields, getEmployeesList } from '../../../services/api';
 import { initialForm } from './constants';
 
 export function useEmployeeForm() {
@@ -18,12 +18,14 @@ export function useEmployeeForm() {
   const [customFieldDefs, setCustomFieldDefs] = useState([]);
   const [profileSections, setProfileSections] = useState([]);
   const [sectionFields, setSectionFields] = useState([]);
+  const [employees, setEmployees] = useState([]);
 
   useEffect(() => {
     fetchSections();
     fetchCustomFields();
     fetchProfileSections();
     fetchSectionFields();
+    fetchEmployeesList();
     if (isEdit) {
       fetchEmployee();
     }
@@ -65,6 +67,15 @@ export function useEmployeeForm() {
     }
   };
 
+  const fetchEmployeesList = async () => {
+    try {
+      const response = await getEmployeesList();
+      setEmployees(response.data || []);
+    } catch (error) {
+      console.error('Failed to load employees list:', error);
+    }
+  };
+
   const fetchEmployee = async () => {
     setFetching(true);
     try {
@@ -95,6 +106,9 @@ export function useEmployeeForm() {
         profileImage: null,
         education: emp.education || '',
         employmentStart: emp.employmentStart || '',
+        directManager: emp.directManager || '',
+        certifications: emp.certifications || '',
+        category: emp.category || '',
         languages: emp.languages || [],
         documents: emp.documents || [],
         customFields: emp.customFields || {}
@@ -303,6 +317,7 @@ export function useEmployeeForm() {
     customFieldDefs,
     profileSections,
     sectionFields,
+    employees,
     isEdit,
     handleChange,
     handleCustomFieldChange,
