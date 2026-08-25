@@ -181,10 +181,10 @@ export default function Design2({ employee, onPrint, onDownloadPdf, customFields
         if (!Array.isArray(certs) || certs.length === 0) return null
         return (
           <div key={field.id} className="d2-certifications">
-            <div className="d2-cert-title"><ClipboardList size={14} /> {label}</div>
+            <div className="d2-cert-title"><ClipboardList size={14} style={{ color: 'var(--primary)' }} /> {label}</div>
             {certs.map((c, i) => (
               <div key={i} className="d2-cert-item">
-                <Check size={12} /> {typeof c === 'string' ? c : c.name || c}
+                <Check size={12} style={{ color: 'var(--primary)' }} /> {typeof c === 'string' ? c : c.name || c}
               </div>
             ))}
           </div>

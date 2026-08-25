@@ -137,6 +137,7 @@ export default function EmployeeFormPage() {
                 isEdit={isEdit}
                 t={t}
                 employees={employees}
+                navigate={navigate}
               />
             </div>
 

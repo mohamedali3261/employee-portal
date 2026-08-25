@@ -1927,6 +1927,22 @@ input, select, textarea {
   }
 }
 
+.direct-manager-field {
+  display: flex;
+  gap: 8px;
+  align-items: stretch;
+}
+
+.direct-manager-field .form-input {
+  flex: 1;
+}
+
+.direct-manager-actions {
+  display: flex;
+  gap: 4px;
+  align-items: center;
+}
+
 /* ============================================
    CERTIFICATIONS SECTION
    ============================================ */
