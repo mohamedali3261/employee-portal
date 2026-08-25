@@ -43,10 +43,10 @@ function FieldInput({ field, form, errors, handleChange, handleCustomFieldChange
   if (isBuiltin && key === 'directManager') {
     const handleAddManager = () => {
       if (!newManagerName.trim()) return;
-      const newId = 'M' + Date.now();
-      const newEmp = { employee_id: newId, name_en: newManagerName.trim(), name_ar: newManagerName.trim() };
+      const name = newManagerName.trim();
+      const newEmp = { employee_id: name, name_en: name, name_ar: name };
       if (onAddEmployee) onAddEmployee(newEmp);
-      handleChange({ target: { name: 'directManager', value: newId } });
+      handleChange({ target: { name: 'directManager', value: name } });
       setNewManagerName('');
       setShowAddModal(false);
     };
@@ -63,7 +63,7 @@ function FieldInput({ field, form, errors, handleChange, handleCustomFieldChange
             <option value="">{t('select')}...</option>
             {(employees || []).map((emp) => (
               <option key={emp.employee_id} value={emp.employee_id}>
-                {emp.employee_id} - {language === 'ar' ? emp.name_ar : emp.name_en}
+                {language === 'ar' ? emp.name_ar : emp.name_en}
               </option>
             ))}
           </select>
