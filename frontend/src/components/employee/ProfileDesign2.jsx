@@ -260,6 +260,20 @@ export default function Design2({ employee, onPrint, onDownloadPdf, customFields
           <span className="d2-employment-value">{sector}</span>
         </div>
       </div>
+      {directManager && (
+        <div className="d2-employment-row">
+          <div className="d2-employment-cell">
+            <span className="d2-employment-label">{t('directManager')}</span>
+            <span className="d2-employment-value">{directManager}</span>
+          </div>
+          {category && (
+            <div className="d2-employment-cell">
+              <span className="d2-employment-label">{t('category')}</span>
+              <span className="d2-employment-value">{t(category) || category}</span>
+            </div>
+          )}
+        </div>
+      )}
       <div className="d2-employment-row">
         <div className="d2-employment-cell">
           <span className="d2-employment-label">{t('startDate')}</span>
