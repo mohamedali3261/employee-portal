@@ -393,13 +393,15 @@ router.post('/import', authenticateToken, async (req, res) => {
         if (existing) {
           await db.prepare(`UPDATE employees SET
             name_ar=?, name_en=?, job_title=?, department=?, email=?, sector=?, hire_date=?, address=?, phone=?,
-            status=?, notes=?,
+            phone2=?, status=?, notes=?,
             insurance_number=?, bank=?, bank_account=?,
             attendance_base=?, route=?, education=?, graduation_year=?,
-            job_title_ar=?, job_title_en=?, employment_start=?, custom_fields=?, birthdate=?, languages=?
+            job_title_ar=?, job_title_en=?, employment_start=?, custom_fields=?, birthdate=?, languages=?,
+            direct_manager=?, category=?, certifications=?
             WHERE employee_id=?`).run(
             emp.name_ar, emp.name_en, emp.job_title || '',
             emp.department || '', emp.email || '', emp.sector || '', emp.hire_date || '', emp.address || '', emp.phone || '',
+            emp.phone2 || '',
             emp.status || 'active',
             emp.notes || '',
             emp.insurance_number || '', emp.bank || '', emp.bank_account || '',
@@ -408,21 +410,26 @@ router.post('/import', authenticateToken, async (req, res) => {
             parseCustomFields(emp.custom_fields, '{}'),
             emp.birthdate || null,
             JSON.stringify(emp.languages || []),
+            emp.direct_manager || '',
+            emp.category || '',
+            typeof emp.certifications === 'string' ? emp.certifications : JSON.stringify(emp.certifications || []),
             emp.employee_id
           );
           imported++;
         } else {
           await db.prepare(`INSERT INTO employees
             (employee_id, name_ar, name_en, job_title, department, email, sector, hire_date, address, phone,
-            status, notes,
+            phone2, status, notes,
             insurance_number, bank, bank_account,
             attendance_base, route, education, graduation_year,
             job_title_ar, job_title_en, employment_start,
             custom_fields,
-            password, must_change_password, birthdate, languages)
-            VALUES (?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?)`).run(
+            password, must_change_password, birthdate, languages,
+            direct_manager, category, certifications)
+            VALUES (?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?)`).run(
             emp.employee_id, emp.name_ar, emp.name_en, emp.job_title || '',
             emp.department || '', emp.email || '', emp.sector || '', emp.hire_date || '', emp.address || '', emp.phone || '',
+            emp.phone2 || '',
             emp.status || 'active',
             emp.notes || '',
             emp.insurance_number || '', emp.bank || '', emp.bank_account || '',
@@ -431,7 +438,10 @@ router.post('/import', authenticateToken, async (req, res) => {
             parseCustomFields(emp.custom_fields, '{}'),
             defaultImportHash, 1,
             emp.birthdate || null,
-            JSON.stringify(emp.languages || [])
+            JSON.stringify(emp.languages || []),
+            emp.direct_manager || '',
+            emp.category || '',
+            typeof emp.certifications === 'string' ? emp.certifications : JSON.stringify(emp.certifications || [])
           );
           imported++;
         }

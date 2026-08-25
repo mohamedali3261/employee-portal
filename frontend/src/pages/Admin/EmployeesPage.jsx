@@ -162,11 +162,16 @@ export default function EmployeesPage() {
           'Graduation Year': emp.graduationYear || '',
           'Email': emp.email || '',
           'Phone': emp.phone,
+          'Phone 2': emp.phone2 || '',
           'Hire Date': emp.hireDate || '',
           'Start Date': emp.employmentStart || '',
+          'Birthdate': emp.birthdate || '',
+          'Direct Manager': emp.directManager || '',
+          'Category': emp.category || '',
           'Address': emp.address || '',
           'Status': statusMap[emp.status] || emp.status,
           'Languages': emp.languages ? emp.languages.map(l => l.language).filter(Boolean).join(', ') : '',
+          'Certifications': emp.certifications ? (Array.isArray(emp.certifications) ? emp.certifications.join(', ') : emp.certifications) : '',
           'Notes': emp.notes || '',
         };
 
@@ -199,10 +204,19 @@ export default function EmployeesPage() {
             'graduationYear': 'graduationYear',
             'employmentStart': 'employmentStart',
             'age': 'age',
+            'phone2': 'phone2',
+            'birthdate': 'birthdate',
+            'directManager': 'directManager',
+            'category': 'category',
+            'certifications': 'certifications',
           };
           
           if (fieldMapping[fieldKey] && emp[fieldMapping[fieldKey]] !== undefined) {
-            value = String(emp[fieldMapping[fieldKey]]);
+            let val = emp[fieldMapping[fieldKey]];
+            if (fieldKey === 'certifications' && Array.isArray(val)) {
+              val = val.join(', ');
+            }
+            value = String(val);
           }
           
           row[field.name_en] = value;
@@ -220,10 +234,10 @@ export default function EmployeesPage() {
       ws['!cols'] = [
         { wch: 5 }, { wch: 10 }, { wch: 22 }, { wch: 22 },
         { wch: 18 }, { wch: 18 }, { wch: 18 }, { wch: 16 },
-        { wch: 16 }, { wch: 16 }, { wch: 25 }, { wch: 16 },
-        { wch: 14 }, { wch: 14 },
-        { wch: 22 }, { wch: 14 },
-        { wch: 30 },
+        { wch: 14 }, { wch: 16 }, { wch: 16 }, { wch: 25 },
+        { wch: 14 }, { wch: 16 }, { wch: 14 },
+        { wch: 18 }, { wch: 16 }, { wch: 18 }, { wch: 22 },
+        { wch: 20 }, { wch: 22 },
         ...sectionDefs.map(() => ({ wch: 18 })),
         ...customDefs.map(() => ({ wch: 20 })),
       ];
@@ -348,11 +362,16 @@ export default function EmployeesPage() {
           graduation_year: row['Graduation Year'] || row['graduationYear'] || '',
           email: row['Email'] || row['email'] || '',
           phone: row['Phone'] || row['phone'] || '',
+          phone2: row['Phone 2'] || row['phone2'] || '',
           hire_date: row['Hire Date'] || row['hireDate'] || '',
           employment_start: row['Start Date'] || row['employmentStart'] || '',
+          birthdate: row['Birthdate'] || row['birthdate'] || '',
+          direct_manager: row['Direct Manager'] || row['directManager'] || row['direct_manager'] || '',
+          category: row['Category'] || row['category'] || '',
           address: row['Address'] || row['address'] || '',
           status: (row['Status'] || row['status'] || 'active').toLowerCase(),
           notes: row['Notes'] || row['notes'] || '',
+          certifications: row['Certifications'] || row['certifications'] || '',
           // Map section fields to their backend field names
           insurance_number: sectionFieldsData['insuranceNumber'] || '',
           bank: sectionFieldsData['bank'] || '',
