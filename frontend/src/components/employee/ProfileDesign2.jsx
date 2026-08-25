@@ -190,7 +190,14 @@ export default function Design2({ employee, onPrint, onDownloadPdf, customFields
           </div>
         )
       }
-      if (field.type === 'date') return <Row key={field.id} icon={fieldIcon(field.field_key)} label={label} value={value ? new Date(value).toLocaleDateString() : null} />
+      if (field.type === 'date') {
+        const formatted = value ? new Date(value).toLocaleDateString() : null
+        if (field.field_key === 'birthdate' && value) {
+          const ageText = age !== null ? `(${age} ${t('years')})` : ''
+          return <Row key={field.id} icon={fieldIcon(field.field_key)} label={label} value={`${formatted} ${ageText}`} />
+        }
+        return <Row key={field.id} icon={fieldIcon(field.field_key)} label={label} value={formatted} />
+      }
       return <Row key={field.id} icon={fieldIcon(field.field_key)} label={label} value={value} />
     }).filter(Boolean)
 
@@ -282,7 +289,7 @@ export default function Design2({ employee, onPrint, onDownloadPdf, customFields
         <div className="d2-employment-cell">
           <span className="d2-employment-label">{t('birthdate')}</span>
           <span className="d2-employment-value">
-            {birthdate ? `${new Date(birthdate).toLocaleDateString()} ${age !== null ? `(${age})` : ''}` : ''}
+            {birthdate ? `${new Date(birthdate).toLocaleDateString()} ${age !== null ? `(${age} ${t('years')})` : ''}` : ''}
           </span>
         </div>
         <div className="d2-employment-cell">
