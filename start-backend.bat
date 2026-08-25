@@ -6,11 +6,8 @@ cd /d "e:\employee-portal"
 git pull
 cd backend
 
-echo Checking for processes on port 8889...
-for /f "tokens=5" %%a in ('netstat -aon 2^>nul ^| findstr ":8889" ^| findstr "LISTENING"') do (
-    echo Killing PID %%a on port 8889...
-    taskkill /F /PID %%a 2>nul
-)
+echo Killing any process on port 8889...
+powershell -NoProfile -Command "Get-NetTCPConnection -LocalPort 8889 -ErrorAction SilentlyContinue | ForEach-Object { Stop-Process -Id $_.OwningProcess -Force -ErrorAction SilentlyContinue }"
 
 timeout /t 2 /nobreak >nul
 echo Starting server...
